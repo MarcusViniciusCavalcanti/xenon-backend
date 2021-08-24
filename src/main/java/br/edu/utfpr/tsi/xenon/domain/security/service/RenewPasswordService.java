@@ -1,0 +1,154 @@
+package br.edu.utfpr.tsi.xenon.domain.security.service;
+
+import static java.lang.Boolean.TRUE;
+import static java.nio.charset.StandardCharsets.UTF_8;
+
+import br.edu.utfpr.tsi.xenon.application.config.property.ApplicationDomainProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.InputRenewPasswordDto;
+import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRenewPassTemplate;
+import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRequestRenewPassTemplate;
+import br.edu.utfpr.tsi.xenon.domain.notification.model.TokenApplication;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
+import br.edu.utfpr.tsi.xenon.structure.repository.TokenRedisRepository;
+import java.util.Base64;
+import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class RenewPasswordService {
+
+    private static final String TEMPLATE_KEY_REQUEST_RENEW_PASS = "%s-%d-%s-renew-password";
+    private static final String TEMPLATE_PARAMETER_URL_REQUEST_RENEW_PASS = "%s:%s";
+    private static final String TEMPLATE_URL_REQUEST_RENEW_PASS = "%s/request-renew-pass?params=%s";
+
+    private final SenderAdapter senderAdapter;
+    private final BCryptPasswordEncoder cryptPasswordEncoder;
+    private final AccessCardRepository accessCardRepository;
+    private final TokenRedisRepository tokenRedisRepository;
+    private final ApplicationDomainProperty applicationDomainProperty;
+
+    @Async
+    public void checkSolicitation(InputRenewPasswordDto input) {
+        log.info("Executando processo de solicitação de nova senha para: {}", input.getEmail());
+        CompletableFuture.runAsync(() -> accessCardRepository.findByUsername(input.getEmail())
+            .ifPresent(accessCardEntity -> {
+                var token = createToken(input.getEmail());
+                var key = createKey(input.getEmail(), accessCardEntity.getId());
+                var url = createUrl(token, key);
+
+                saveToken(token, key);
+                sendEmail(input, url);
+            }))
+            .handleAsync((result, throwable) ->
+                catchError(result, throwable, "Erro na solicitação de pedido de senha {}"));
+    }
+
+    @Async
+    public void renewPassword(String params) {
+        CompletableFuture.runAsync(() -> {
+            log.info("Executando renovação de senha.");
+            var decodeParams = decodeAndGetKeyToken(params);
+
+            log.debug("Recuperando token.");
+            var expectedToken = tokenRedisRepository.findTokenByKey(decodeParams.key);
+
+            if (TRUE.equals(TokenApplication.newInstance()
+                .validateToken(decodeParams.token, expectedToken))) {
+
+                log.debug("recuperando access card.");
+                var email = getEmail(decodeParams);
+                accessCardRepository.findByUsername(email)
+                    .ifPresentOrElse(accessCardEntity -> {
+                        log.info("Criando nova senha.");
+                        var pass = CreatorPasswordService
+                            .newInstance(cryptPasswordEncoder)
+                            .createPass();
+
+                        log.info("enviando email.");
+                        var template = new MessageRenewPassTemplate(pass.pass(), email);
+                        senderAdapter.sendEmail(template);
+                        accessCardEntity.setPassword(pass.encoderPass());
+
+                        log.info("Salvando nova senha.");
+                        tokenRedisRepository.delete(decodeParams.key);
+                        accessCardRepository.saveAndFlush(accessCardEntity);
+                    }, () -> log.debug("access card não foi encontrado."));
+            } else {
+                log.info("Token não encontrado ou está invalido.");
+            }
+        }).handleAsync((result, throwable) ->
+            catchError(result, throwable, "Erro na confirmação de pedido de senha {}"));
+    }
+
+    private String getEmail(KeyToken decodeParameter) {
+        return decodeParameter.key.split("-")[0];
+    }
+
+    private KeyToken decodeAndGetKeyToken(String parameter) {
+        log.debug("De codificando parâmetros.");
+        var decodeParameter = new String(Base64.getDecoder().decode(
+            parameter.getBytes(UTF_8)),
+            UTF_8);
+        var arrayParameter = decodeParameter.split(":");
+        var key = arrayParameter[0];
+        var token = arrayParameter[1];
+
+        return new KeyToken(key, token);
+    }
+
+    private void sendEmail(InputRenewPasswordDto input, String url) {
+        log.debug("Enviando e-mail para notificação solicitação de senha.");
+        var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
+        senderAdapter.sendEmail(template);
+    }
+
+    private void saveToken(TokenApplication token, String key) {
+        log.debug("Salvando token com tempo de 5 horas");
+        tokenRedisRepository.saveToken(key, token.getToken(), 5L, TimeUnit.HOURS);
+    }
+
+    private String createUrl(TokenApplication token, String key) {
+        log.debug("Criando url de solicitação de nova senha para url.");
+        var partOneUrl = TEMPLATE_PARAMETER_URL_REQUEST_RENEW_PASS
+            .formatted(key, token.getToken());
+        var parameterUrl = new String(
+            Base64.getEncoder().encode(partOneUrl.getBytes(UTF_8)),
+            UTF_8);
+        return TEMPLATE_URL_REQUEST_RENEW_PASS
+            .formatted(applicationDomainProperty.getDomain(), parameterUrl);
+    }
+
+    private String createKey(String email, Long id) {
+        log.debug("Criando key de solicitação de nova senha.");
+        var randString = RandomStringUtils.random(10, TRUE, TRUE);
+        return TEMPLATE_KEY_REQUEST_RENEW_PASS.formatted(email, id, randString);
+    }
+
+    private TokenApplication createToken(String email) {
+        log.debug("Criando token de solicitação de nova senha.");
+        var token = TokenApplication.newInstance(email);
+        token.generateNewToken();
+        return token;
+    }
+
+    private Void catchError(Void result, Throwable throwable, String s) {
+        if (Objects.nonNull(throwable)) {
+            log.error(s, throwable.getMessage());
+        }
+        return result;
+    }
+
+    record KeyToken(String key, String token) {
+
+    }
+}

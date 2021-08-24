@@ -1,0 +1,97 @@
+# custom configuration application
+xenon:
+  configurations:
+    datasource:
+      driver: ~
+      url: ~
+      username: ~
+      password: ~
+    file:
+      avatarUrl: avatar
+      docUrl: docs
+      secret: 4aMZDmsQuKC4KqZKKbJtkDZZdW4
+      key: 265677587612289
+      name: xenonapp
+    redis:
+      host: ~
+      port: 0
+    email:
+      host: ~
+      port: 0
+      protocol: ~
+      username: ~
+      password: ~
+      auth: false
+      tls:
+        enable: false
+        required: false
+    security:
+      token:
+        expiration: 3600
+        secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
+    application:
+      domain: http://localhost:8080/api
+# server configuration
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+    application-display-name: xenon-api
+
+# spring framework configuration
+spring:
+  redis:
+    timeout: 0
+  data:
+    redis:
+      repositories:
+        enabled: false
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 50MB
+      file-size-threshold: 2KB
+  datasource:
+    driverClassName: ${xenon.configurations.datasource.driver}
+    url: ${xenon.configurations.datasource.url}
+    username: ${xenon.configurations.datasource.username}
+    password: ${xenon.configurations.datasource.password}
+    hikari:
+      connection-timeout: 15000
+      idle-timeout: 300000
+      max-lifetime: 700000
+      maximum-pool-size: 20
+      minimum-idle: 5
+      pool-name: XenonPoolHirakiApplication
+      validation-timeout: 300000
+      connection-test-query: SELECT 1
+  jpa:
+    show-sql: true
+    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+  mail:
+    host: ${xenon.configurations.email.host}
+    username: ${xenon.configurations.email.username}
+    password: ${xenon.configurations.email.password}
+    properties:
+      email:
+        transport:
+          protocol: ${xenon.configurations.email.protocol}
+        smtp:
+          port: ${xenon.configurations.email.port}
+          auth: ${xenon.configurations.email.auth}
+          starttls:
+            enable: ${xenon.configurations.email.tls.enable}
+            required: ${xenon.configurations.email.tls.required}
+
+# docs swagger configurations
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    url: http://localhost:${server.port}${server.servlet.context-path}/api-doc.yml
+    path: /swagger-ui.html
+

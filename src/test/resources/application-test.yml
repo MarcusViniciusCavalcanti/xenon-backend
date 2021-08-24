@@ -1,0 +1,31 @@
+junit:
+  jupiter:
+    execution:
+      parallel:
+        enabled: true
+
+spring:
+  redis:
+    timeout: 0
+  data:
+    redis:
+      repositories:
+        enabled: false
+  datasource:
+    hikari:
+      connection-timeout: 250
+      idle-timeout: 250
+      max-lifetime: 250
+      maximum-pool-size: 4
+      minimum-idle: 4
+      pool-name: XenonPoolHirakiApplicationTest
+      validation-timeout: 250
+
+xenon:
+  configurations:
+    email:
+      auth: false
+      tls:
+        enable: false
+        required: false
+

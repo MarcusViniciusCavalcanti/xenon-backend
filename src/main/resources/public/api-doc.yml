@@ -1,0 +1,996 @@
+openapi: 3.0.1
+
+info:
+  title: Xenon API
+  description: |-
+    Para obter mais informações sobre o desenvolvimento
+    acessar o [github](<adicionar repositorio github>).
+
+
+    ## Overview
+
+    Api para o sistema Xenon, de alunos para alunos.
+
+    Esta api está agnostica de clientes deste que uso protocolos, **HTTP**, seja ele a aplicação de reconhecimento
+    ou web.
+
+    ## Começando
+
+    Esta documentação ira auxiliar em novas implementações de __clients sides__, dando uma base
+    de como manipular os recursos que a API provem.
+
+    ### HTTP Verbs
+
+    Esta Api foi construída a seguir os padrões RESTFull, tentando aderir o mais próximo
+    possíveis das convenções uso dos verbos HTTP.
+
+
+    | Verbo     | Utilização                                      |
+    | :-------: | :---------------------------------------------- |
+    | `GET`     | Usado para recuperar recursos                   |
+    | `POST`    | Usado para criar um recurso                     |
+    | `PUT`     | Usado para atualizar um recurso                 |
+    | `PATCH`   | Usado para atualizar um parcialmente um recurso |
+    | `DELETE`  | Usado para remover um recurso existente         |
+
+    ### HTTP status codes
+
+    Esta Api foi construída seguindo os padrões RESTFull, tentando aderir o mais próximo
+    possíveis as suas convenções em seu uso dos códigos de Status HTTP.
+
+    | Status code                    | Utilização                                                                                                                          |
+    | :----------------------------: | :---------------------------------------------------------------------------------------------------------------------------------- |
+    | ``200 OK``                     | Para requisições aceitas e processadas                                                                                              |
+    | ``201 Created``                | Um novo recurso foi criado com sucesso                                                                                              |
+    | ``400 Bad Request``            | Requisição negada, pois está mal formatada, exemplo de retorno de erro quando a falta de um atributo, no corpo da mensagem          |
+    | ``409 Conflict``               | O recurso já existe com as informações dada                                                                                         |
+    | ``422 Unprocessable Entity``   | Requisição negada, pois não passou na validação da requisição, um atributo nulo ou ultrapassou o limite de caracteres, são exemplos |
+    | ``500 Internal Server Error``  | Houve um problema de processamento interno.                                                                                         |
+
+    ### Não Autenticado
+    Caso a requisição não contenha o header acima, excluido as que não carece de autenticação, será retornar uma mensagem
+    de error com **status code** `401`.
+
+    ### Não Autorizado
+    Para os casos de não autorizado, a mensagem de erro retornada será com **status code** `403`.
+
+    ## Header
+
+    Api em alguns casos, impôe aos clientes na requisição dicione alguns Headers obrigatórios,
+    outros são opicionais porém para melhor resposta da requisição é recomendado incluir os Headers
+    aqui dispostos.
+
+
+    ### Accept-Language
+    Api fara a tradução de texto com base neste header, caso o valor do idioma não ouver tradução,
+    o idioma será o inglês.
+
+    __Importante resultar que Api utilizara o primeiro elemento do valor do header.__
+
+    Por exemplo:
+    `Accept-Language: en-US,en,pt` neste caso a api utilizara como idioma de resposta o valor de:
+    __en-US__
+
+    Atualmente a API suporta os seguites idiomas:
+    * Inglês en-US
+    * Portugues do brasil pt-BR
+
+  contact:
+    email: cavalcanti@alunos.utfpr.edu.br
+  version: 1.0.0
+  license:
+    name: "Apache 2.0"
+    url: "https://www.apache.org/licenses/LICENSE-2.0.html"
+
+servers:
+  - url: 'http://localhost:8080/api'
+    description: 'Servidor de aplicação de homologação'
+
+tags:
+  - name: Security
+    x-displayName: Segurança.
+    description: |-
+      ## Segurança
+
+      As requisições feitas para Api serão STATELESS (**Sem estado**), logo a utilização de Token para
+      autorizar uma determinada requisição se faz necessário, assim a Api para Autorizar e autenticar um usuário
+      fica a cargo do JWT.
+
+      Uma vez o usuário autorizado o será retornado no corpo da mensagem o token JWE e seu tempo de expiração.
+
+      ### Solicitando token
+      Para fazer as solicitações de pedido de token é necessário acessar a url __/api/login__
+      enviando login e senha
+
+      ````
+      {
+        "username": "email@email.com",
+        "password": "password"
+      }
+      ````
+
+      Após o processo recebera como resposta um token para acessar os recursos que são necessário autorização.
+      ````
+      data: {
+        "token": "<token>",
+        "expiration": "36000",
+      }
+      ````
+      Para mais informações verifique o schema do objeto Token, na sessão Schemas
+
+      O status code da resposta será __OK__.
+
+      Exceto as requisições advinda do dispositivo, deverá conter um Header `Authorization` contendo um portador (`Bearer`).
+      O token que recebera da requisição de login, **corpo da resposta (value)**.
+
+      Exemplo:
+
+      ``Authorization: Bearer <TOKEN>``
+
+      Algumas urls ou uris tem regras distintas para acesso, a qual será informada no campo `ROLE`, de cada requisição,
+      verifique o nível de acesso em cada requisição, procurando pela informação de perfil necessário para requisição
+
+      ### Não Autenticado
+      Caso a requisição não contenha o header acima, excluido as que não carece de autenticação, será retornar uma mensagem
+      de error com **status code** `401`.
+
+      ### Não Autorizado
+      Para os casos de não autorizado, a mensagem de erro retornada será com **status code** `403`.
+  - name: Registry
+    x-displayName: Cadastro de Estudante.
+    description: |-
+      Para ter acesso aos beneficios do sistema é necessário um cadastro.
+      O cadastro do usuário pode ser feito por ele mesmo, ou o administrador do sistema pode inclui-lo.
+
+      Para o primeiro caso, apenas estara disponível para alunos e algumas regras deve ser observadas:
+      * O usuário deve ter um e-mail institucional, no dominíno ``@alunos.utfpr.edu.br``
+      * O usuário deve obrigatóriamente, fazer o upload de um avatar da foto do usuário;
+      * O usuário também deve obrigatóriamente, fazer o upload da foto ou pdf do documento do carro.
+
+      Para essas regras serem correspondida, o sistema gera alguns passos para o cadastro do usuário:
+      * Validar o e-mail institucional, será valido o e-mail;
+      * Confirmação de e-mail, para que o cadastro seja ativado.
+
+      Após os passo informados acima, o aluno terá acesso ao sistema, porém deve ser observado que
+      seu acesso ainda não está disponível, o aluno então deverá fazer o upload dos arquivos necessários
+      __foto__, __documento do carro__, para então, poder ser liberado no sistema.
+
+  - name: User
+    x-displayName: Usuários
+    description: |-
+      Recurso User representa um abstração de um usuário do sistema, este recurso conteém todas as informações
+      necessárias de um usuário do sistema exemplo:
+      * Nome;
+      * E-mail;
+      * Tipo do usuário, e outros.
+
+
+      Dentre outras informações, dentro deste recurso também está presente os papeis do usuário no sistema
+      informação necessária para autorizar que este mesmo usuário acesse outros recursos da aplicação.
+  - name: Profile
+    x-displayname: Perfil
+    description: |-
+      O cliente usuário que representado por recurso Usuário onde as informações contidas no recursos, como por
+      exemplo nome, e-mail, informações do carro, etc.
+
+      São as informações do cliente usuário. As informações podem ser obtidas e manipuladas pelo __Profile__
+      como por exemplo:
+      * Recuperar as informações persistidas solicitando para `/me`
+      * Altera o dado nome solicitando para `/change-name`
+      * Adicionar um novo carro, solicitando para `/include-new-car`
+      * Removendo um carro já cadastrado, solicitando para `/remove-car`
+      * Pedido uma nova a senha, solicitando para `/change-password`
+      * Canelando sua conta, solicitando `/disabled-account`
+
+      __OBS:__ Todas as solicitações é necessário que o cliente usuário esteja autenticado e seu token válido, dentro da data de validade.
+paths:
+    /login/:
+      post:
+        summary: Acessar o sistema.
+        operationId: login
+        tags:
+          - Security
+        description: |-
+          ## Login
+
+          Devolve um token de acesso para requisições que é necessário autenticação no sistema.
+        responses:
+          '200':
+            $ref: '#/components/responses/LoginSuccessResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+        requestBody:
+          description: |-
+            Solicitação foi finalizada com sucesso!
+
+            No corpo da __resposta__ (response) está o token de acesso e o tempo de expiração em milisegundos.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputLogin'
+    /request-renew-pass/:
+      post:
+        summary: Solicitação de nova senha
+        operationId: renewPassword
+        tags:
+          - Security
+        description: |-
+          ## Solicitação nova senha
+
+          __Primeiro passo para pedido de nova senha.__
+
+
+          Solicitação para pedido de nova senha, um e-mail será enviado para o e-mail cadastrado,
+          solicitando confirmação nova senha. Caso o e-mail não for encontrado a Api silenciosamente
+          ignora a solicitação, ou seja sempre retornara processo concluído com sucesso.
+        parameters:
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+        requestBody:
+          required: true
+          description: |-
+            Solicitação aceita, um e-mail será enviando com a nova senha.
+
+            __OBS:__ o retorno sempre será 202 com resposa de sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputRenewPassword'
+        responses:
+          '202':
+            $ref: '#/components/responses/RequestRenewPassResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      get:
+        summary: Confirmação de solicitação de nova senha
+        operationId: renewPasswordConfirm
+        tags:
+          - Security
+        description: |-
+          ## Confirmação do pedido de nova senha
+
+          __Segundo passo para pedido de nova senha.__
+
+          Último passo para renovação de senha, uma vez confirmado o pedido de nova senha, a Api criará
+          a senha e enviará para o e-email informado. Caso o link esteja expirado uma resposta de erro
+          com Status Code 422 será retornada.
+
+          __OBS:__ caso algum erro for encontrado exceto link expirado, como já mencionado,
+          a Api silenciosamente tratará o erro e ocultará o erro, sendo assim não informará para o cliente,
+          por motivos de seguraça.
+        parameters:
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+          - in: query
+            description: token para solicitação de nova senha.
+            name: params
+            schema:
+              type: string
+              example: ?params=YWFhYWE=
+        responses:
+          '202':
+            $ref: '#/components/responses/ConfirmRenewPassResponse'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+    /new-students/registry/:
+      post:
+        summary: Registra um novo estudante no sistema
+        tags:
+          - Registry
+        operationId: registerNewStudents
+        description: >-
+          ## Registro para estudantes
+
+          Registro feito pelo próprio estudante, neste caso algumas regras devera ser observadas:
+          * E-mail deve ser institucional, **@alunos.utfpr.edu.br
+          * O aluno deve confirmar a posse do e-mail, clicando no link que será enviado no e-mail informado
+          * O aluno deve enviar uma foto de avatar para seu perfil.
+          * O aluno também deve enviar uma foto do documento do carro.
+
+          Embora o aluno termine esses passos com sucesso, o acesso do aluno ainda deve ser liberado pelo
+          administrador do sistema.
+        parameters:
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+        requestBody:
+          required: true
+          description: Corpo da chama para cadastrar o usuário.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputRegistryStudent'
+        responses:
+          '201':
+            $ref: '#/components/responses/UserRegistrySuccess'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '409':
+            $ref: '#/components/responses/Conflict'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+    # profile
+    /profile/me/:
+      get:
+        summary: Retornar o usuário dono do token
+        description: |-
+          ### Esta requisição necessita de um usuário autenticado no sistema.
+
+          Uma vez autenticado no sistema, enviado uma requisição para login, este disponibiliza as
+          informações do dono token.
+        operationId: getUserOwnerToken
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+        responses:
+          '200':
+            $ref: '#/components/responses/UserOwnerToken'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /profile/change-name:
+      patch:
+        summary: Altera o nome do recurso usuário
+        operationId: changeName
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamad para alterar o nome do usuário
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputNameUser'
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /profile/include-new-car:
+      patch:
+        summary: Adiciona um novo recurso carro para usuário
+        operationId: includeNewCar
+        description: |-
+          ### Incluir novo carro
+
+          O usuário poderá adicionar mais de um carro, com limite de até 5 carros, os carros anteriores já incluídos
+          continuaram com seus acessos normais, porém este novo carro incluído para receber o acesso, deverá
+          ser enviado a foto do documento, e o Administrador do sistema deverá autorizar.
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada que contém as informações para incluir um carro.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputNewCar'
+        responses:
+          '201':
+            $ref: '#/components/responses/IncludeNewCarResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /profile/remove-car:
+      delete:
+        summary: Remove um recurso carro do usuário
+        operationId: removeCar
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        responses:
+          '204':
+            description: Remoção concluida com sucesso.
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /profile/change-password:
+      post:
+        summary: Faz uma solicitação de pedido para uma nova senha
+        operationId: changePassword
+        description: |-
+          ### Alteração de senha
+
+          O usuário poderá alterar sua senha quantas vezes quiser, desde que esteja autenticado no sistema Xenon
+          Uma vez o processo seja concluido, um e-mail será enviado notificando a alteração da senha.
+
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          required: true
+          description: Corpo da solicitação para troca de senha
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputChangePassword'
+        responses:
+          '202':
+            $ref: '#/components/responses/RefreshPassSuccess'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /profile/disable-account:
+      delete:
+        summary: Desabilita a conta do usuário
+        operationId: disableAccount
+        description: |-
+          ### Desativar conta
+
+          O usuário poderá desativar sua conta quando quiser, neste caso ele perderá todo o acesso ao sistema
+          * acessar a aplicação
+          * acessar o estacionamento.
+        tags:
+          - Profile
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+
+components:
+  schemas:
+    # Dtos
+    Token:
+      properties:
+        data:
+          type: object
+          description: objeto que representa um token de acesso
+          properties:
+            token:
+              type: string
+              description: token de acesso
+              example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6ImF5bGFuQGJvc2Nhcmluby5jb20iLCJwYXNzd29yZCI6InlhMGdzcWh5NHd6dnV2YjQifQ.yN_8-Mge9mFgsnYHnPEh_ZzNP7YKvSbQ3Alug9HMCsM
+            expiration:
+              type: integer
+              format: int64
+              description: Tempos em segundos da expiração do token
+              example: 3600
+    ProcessResult:
+      type: object
+      properties:
+        result:
+          description: resultado do processo.
+          type: string
+          example: Prcoesso concluído
+    Role:
+      type: object
+      properties:
+        id:
+          description: Identificador único do registro do usuário.
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          description: Nome do papel
+          example: ROLE_DRIVER
+        description:
+          type: string
+          description: Descrição do papel
+          example: Perfil Motorista
+    User:
+      type: object
+      properties:
+        id:
+          description: Identificador único do registro do usuário.
+          type: integer
+          format: int64
+          example: 1
+        email:
+          description: e-mail da credencial do usuário, como ela que ele utilizara para acessar o sistema.
+          type: string
+          example: aluno@alunos.utfpr.edu.br
+          pattern: ^[A-Za-z0-9._%+-]+@alunos.utfpr.edu.br$
+        name:
+          description: nome do aluno
+          type: string
+          minimum: 10
+          maximum: 255
+          example: Fulano de Tal
+        type:
+          type: string
+          enum:
+            - STUDENTS
+            - SPEAKER
+            - SERVICE
+          description: |-
+            * `STUDENTS` - Tipo de usuário estudante.
+            * `SPEAKER`  - Tipo de usuário palestrante.
+            * `SERVICE`  - Tipo de usuário servidor.
+          example: STUDENTS
+        avatar:
+          type: string
+          example: "https://avatar-uri.com.br"
+          description: Uri do avatar do usuário
+        cars:
+          type: array
+          items:
+            $ref: '#/components/schemas/Car'
+        roles:
+          type: array
+          items:
+            $ref: '#/components/schemas/Role'
+    Car:
+      type: object
+      properties:
+        id:
+          description: identificador único do carro
+          type: integer
+          format: int64
+          example: 10
+        modelCar:
+          description: Modelo do carro, este campo é opcional.
+          type: string
+          maximum: 15
+          minimum: 3
+          example: Gol 1.0
+        plateCar:
+          description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
+          type: string
+          pattern: "[aA-zZ]{3}[0-9][0-9aA-zZ][0-9]{2}"
+        document:
+          type: string
+          example: "https://document-uri.com.br"
+          description: Uri do documento do carro
+        lastAcess:
+          type: string
+          format: date-time
+          example: "2021-01-30T08:30:00Z"
+          description: Data de ultimo acesso
+        numberAccess:
+          type: integer
+          example: 100
+          description: Quantidade de acessos autorizado do carro
+    PageBase:
+      properties:
+        size:
+          type: integer
+          description: quantidade elementos
+          example: 5
+        page:
+          type: integer
+          description: número da página
+          example: 0
+        sorted:
+          type: string
+          description: campo do recurso que foi ordernado a página
+          example: field
+        direction:
+          type: string
+          example: asc
+          description: direção da ordenação Ascendente ou Descendente
+        totalElementos:
+          type: integer
+          description: total de elementos encontrados
+          example: 500
+        totalPage:
+          type: integer
+          description: total de páginas possíveis, com base no tamanho de elementos na página e o total de elementos.
+          example: 10
+    PageUser:
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/User'
+
+    #Inputs
+    InputLogin:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          description: E-mail que foi cadastrado para o usuário.
+          example: email@email.com
+        password:
+          type: string
+          description: Senha que foi cadastrada para o usuário.
+          example: abc1234
+    InputRenewPassword:
+      required:
+        - email
+      properties:
+        email:
+          description: e-mail para ser enviado a nova senha.
+          type: string
+          example: email@email.com.br
+          pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+    InputRegistryStudent:
+      required:
+        - token
+        - email
+        - name
+        - password
+        - confirmPassword
+      properties:
+        token:
+          description: token de registro
+          type: string
+          example: 80192923-2a56-44d6-92ff-60441897fe7a
+          pattern: ([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})
+        email:
+          description: e-mail da credencial do usuário, como ela que ele utilizara para acessar o sistema.
+          type: string
+          example: aluno@alunos.utfpr.edu.br
+          pattern: ^[A-Za-z0-9._%+-]+@alunos.utfpr.edu.br$
+        name:
+          description: nome do aluno
+          type: string
+          minimum: 10
+          maximum: 255
+          example: Fulano de Tal
+        password:
+          description: Senha da credencial do usuário
+          type: string
+          minimum: 5
+          maximum: 8
+        confirmPassword:
+          description: Mesma senha informada no campo senha, para confirmação.
+          type: string
+          minimum: 5
+          maximum: 8
+        modelCar:
+          description: Modelo do carro, este campo é opcional.
+          type: string
+          maximum: 15
+          minimum: 3
+          example: Gol 1.0
+        plateCar:
+          description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
+          type: string
+          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
+    InputNameUser:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          description: nome do usuário a ser alterado
+          example: Fulano de tal
+    InputNewCar:
+      type: object
+      required:
+        - model
+        - plate
+      properties:
+        model:
+          type: string
+          description: Modelo do carro
+          example: Gol 1.0
+        plate:
+          type: string
+          description: placa do carro, placas no formato mercosu são aceitas
+          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
+          example: ABC-1A34
+    InputChangePassword:
+      type: object
+      required:
+        - actualPassword
+        - password
+        - confirmPassword
+      properties:
+        actualPassword:
+          type: string
+          description: Senha atual, utilizada para acessar o sistema Xenon
+          example: 12345678
+          minimum: 8
+          maximum: 16
+        password:
+          type: string
+          description: Nova senha
+          example: 87654321
+          minimum: 8
+          maximum: 16
+        confirmPassword:
+          type: string
+          description: Confirmação da senha.
+
+
+    # Params
+    ParamsQuerySearchUser:
+      example: >-
+        users/all?size=5&page=0&sorted=name&direction=asc
+      properties:
+        size:
+          type: integer
+        page:
+          type: integer
+        sorted:
+          enum:
+            - name
+            - email
+            - type
+        direction:
+          enum:
+            - asc
+            - desc
+
+
+    # Errors
+    ErrorBase:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+          example: 0
+          description: Code de status http
+        message:
+          type: string
+          example: Um erro ocorreu.
+          description: Mensagem da ocorrencia do erro.
+        path:
+          type: string
+          example: /path
+          description: uri da ocorrencia do erro
+    Error:
+      allOf:
+        - type: object
+        - $ref: '#/components/schemas/ErrorBase'
+        - properties:
+            details:
+              type: array
+              items:
+                $ref: '#/components/schemas/ErrorDetails'
+    ErrorDetails:
+      type: object
+      properties:
+        field:
+          type: string
+          example: type.field
+          description: nome do campo que contém um erro
+        descriptionError:
+          type: string
+          example: Campo inválido
+          description: descreve o erro o erro encontrado no campo.
+
+  #Responses
+  responses:
+    #Success
+    LoginSuccessResponse:
+      description: |-
+        Solictação para login, retorna um Token de acesso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Token'
+    RequestRenewPassResponse:
+      description: Solicitação para nova senha aceito.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessResult'
+    ConfirmRenewPassResponse:
+      description: Confirmação para solicitação para nova senha aceito.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessResult'
+    UserRegistrySuccess:
+      description: >-
+        Registro do usuário foi concluído com sucesso.
+
+        Após os passos de validação, o usuário envio seus dados de cadastro para por fim, completar
+        seu cadastro.
+
+        A partir deste ponto o usuário já poderá acessar o sistema normalmente, informando o e-mail e senha cadastrados.
+
+
+        __Os dados do usuário será retornado para uso do cliente.__
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    UserOwnerToken:
+      description: >-
+        Retorna o usuário correspondente ao token do header
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    UserAccessResponse:
+      description: Retorno para ação.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessResult'
+    IncludeNewCarResponse:
+      description: Retorna o recurso carro, incluido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Car'
+    RefreshPassSuccess:
+      description: >-
+        Retornar mensagem de sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessResult'
+
+    # errors
+    BadRequest:
+      description: >
+        Requisição está invalida, o corpo da mensagem está mal formatada, por exemplo, campos faltando ou
+        campos estão inválidos (formato inválido).
+          No corpo da resposta encontrar uma lista de detalhes que dará informações pertinentes para corrigir o erro.
+        Para maiores informações consulte a [rfc-7231](https://datatracker.ietf.org/doc/html/rfc7231#section-6.5.1).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: |-
+        Recurso não foi encontrado, geralmente a url pode está errada ou recurso pedido não existe.
+
+
+        Para maiores informações consulte a [rfc-7231](https://httpwg.org/specs/rfc7231.html#status.404).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+    Conflict:
+      description: |-
+        `Requisição` foi aceita mas, os dados enviados está em conflito com o recurso a ser manipulado
+        por exemplo: e-mail, placa do carro já foi cadastrada anteriormente para outro usuário.
+
+
+        Para maiores informações consulte a [rfc-7231](https://httpwg.org/specs/rfc7231.html#status.409).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+    UnprocessableEntity:
+      description: >
+        `Requisição` foi aceita mas, não foi possível concluir com sucesso, devido __alguma regra de negôcio__
+        por exemplo: validações, papeis de usuário não confere com o tipo de usuário.
+
+
+        Para maiores informações consulte a [rfc-4918](https://datatracker.ietf.org/doc/html/rfc4918#section-11.2).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+    InternalServerError:
+      description: >
+        Error inesperado em alguma parte do processo, neste caso a api não conseguiu se recuperar
+        do error.
+
+
+        Caso isto ocorra, por favor, notifique o momento do erro, crie uma issue no __repositório__ da aplicação explicando
+        os detalhes de como aconteceu o error.
+
+
+        Para maiores informações consulte a [rfc-7231](https://datatracker.ietf.org/doc/html/rfc7231#section-6.6.1).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+    Unauthorized:
+      description: >
+        Acesso negado, usuário não está autenticado.
+
+
+        Caso isto ocorra, por favor, solicite uma token de acesso, verifique a sessão seguração para mais informações
+
+
+        Para maiores informações consulte a [rfc-7235](https://httpwg.org/specs/rfc7235.html#status.401).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+    Forbidden:
+      description: >
+        Acesso bloqueado, usuário não tem permissão para acessar o recurso.
+
+
+        Caso isto ocorra, por favor, verifique o papel necessário para acessar o recurso desejado.
+
+
+        Para maiores informações consulte a [rfc-7231](https://httpwg.org/specs/rfc7231.html#status.403).
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBase'
+
+
