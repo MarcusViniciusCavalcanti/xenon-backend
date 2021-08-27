@@ -1,6 +1,10 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
 
+import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AuthorizationServiceException;
@@ -16,9 +20,10 @@ import org.springframework.stereotype.Service;
 public class SecurityContextUserService {
 
     private static final String TOKEN_IS_INVALID = "Token é invalido";
-    private final AccessTokenService tokenCreator;
 
+    private final AccessTokenService tokenCreator;
     private final UserDetailsService accessCardRepository;
+    private final UserRepository userRepository;
 
     public void receiveTokenToSecurityHolder(String token) {
         if (tokenCreator.isValid(token)) {
@@ -37,5 +42,14 @@ public class SecurityContextUserService {
         }
 
         throw new AuthorizationServiceException("token está invalido");
+    }
+
+    public Optional<UserEntity> getUserByContextSecurity(String authorization) {
+        log.debug("Recuperando access card do token: {}", authorization);
+        var principal = (AccessCardEntity) SecurityContextHolder.getContext()
+            .getAuthentication()
+            .getPrincipal();
+
+        return userRepository.findByAccessCard(principal);
     }
 }

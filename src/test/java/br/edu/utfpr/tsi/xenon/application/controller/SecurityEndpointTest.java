@@ -45,9 +45,6 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Autowired
     private RoleRepository roleRepository;
 
-    @Autowired
-    private RedisTemplate<String, String> redisTemplate;
-
     @Test
     @DisplayName("Deve retornar erro quando usuário não encontrado")
     void shouldReturnError() {

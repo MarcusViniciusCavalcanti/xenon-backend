@@ -48,7 +48,7 @@ class EndpointsTranslatorTest {
     static class TestController implements EndpointsTranslator {
 
         @Override
-        public MessageSource getMessage() {
+        public MessageSource getMessageSource() {
             return null;
         }
     }

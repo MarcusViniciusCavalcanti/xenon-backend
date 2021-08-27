@@ -5,13 +5,25 @@ import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_INVALID;
 import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.edu.utfpr.tsi.xenon.application.dto.InputNewCarDto;
+import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
+import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,6 +35,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - CarsAggregator")
@@ -93,6 +108,28 @@ class CarsAggregatorTest {
 
         assertFalse(user.getCar().isEmpty());
         assertEquals(expected, user.getCar().get(0).getPlate());
+    }
+
+    @Test
+    @DisplayName("Deve lançar BusinessException quando tentar incluir carro mas, atingiu o limite de 10")
+    void shouldThrowsBusinessExceptionCarsExceededLimit() {
+        var user = new UserEntity();
+
+        var cars = IntStream.rangeClosed(0, 11).boxed()
+            .map(index -> {
+                var car = new CarEntity();
+                car.setId(index.longValue());
+                car.setModel("model");
+                car.setPlate("plate");
+
+                return car;
+            }).collect(Collectors.toList());
+        user.setCar(cars);
+
+        var exception = assertThrows(BusinessException.class,
+            () -> carsAggregator.includeNewCar(user, "model", "plate"));
+
+        assertEquals(MessagesMapper.LIMIT_EXCEEDED_CAR.getCode(), exception.getCode());
     }
 
     private static Stream<Arguments> providerArgsToInvalidPlateOrModel() {

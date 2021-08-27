@@ -13,5 +13,7 @@ public interface UserRepository
 
     Optional<UserEntity> findByAccessCard(AccessCardEntity accessCard);
 
+    Optional<UserEntity> findByAccessCardUsername(String username);
+
     Boolean existsByName(String name);
 }

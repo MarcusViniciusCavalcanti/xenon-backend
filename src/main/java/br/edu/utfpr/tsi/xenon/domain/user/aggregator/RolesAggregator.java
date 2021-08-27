@@ -43,7 +43,7 @@ public class RolesAggregator {
             .filter(allowedRoles::contains)
             .collect(Collectors.toList());
 
-       var roles = repository.findAllById(rolesIds);
-       accessCard.setRoleEntities(roles);
+        var roles = repository.findAllById(rolesIds);
+        accessCard.setRoleEntities(roles);
     }
 }

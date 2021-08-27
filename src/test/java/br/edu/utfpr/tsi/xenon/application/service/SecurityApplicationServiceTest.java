@@ -1,15 +1,23 @@
 package br.edu.utfpr.tsi.xenon.application.service;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputLoginDto;
 import br.edu.utfpr.tsi.xenon.application.dto.TokenDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.service.AccessTokenService;
+import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
+import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import com.github.javafaker.Faker;
+import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +37,12 @@ class SecurityApplicationServiceTest {
 
     @Mock
     private AccessTokenService accessTokenService;
+
+    @Mock
+    private SecurityContextUserService securityContextUserService;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private SecurityApplicationService service;
@@ -52,5 +66,30 @@ class SecurityApplicationServiceTest {
         verify(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
         verify(authentication).getPrincipal();
         verify(accessTokenService).create(accessCardEntity);
+    }
+
+    @Test
+    @DisplayName("Deve lançar ResourceNotFoundException quando usuário não existe")
+    void shouldResourceNotFoundExceptionWhenUserNotFound() {
+        when(securityContextUserService.getUserByContextSecurity(any()))
+            .thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class,
+            () -> service.changePass(new InputChangePasswordDto(), "token"));
+    }
+
+    @Test
+    @DisplayName("Deve desativar conta do usuário com sucesso")
+    void shouldHaveDisableAccountUser() {
+        var user = new UserEntity();
+        var accessCard = new AccessCardEntity();
+        user.setAccessCard(accessCard);
+        when(securityContextUserService.getUserByContextSecurity(any())).thenReturn(Optional.of(user));
+        when(userRepository.saveAndFlush(user)).thenReturn(new UserEntity());
+
+        service.disableAccount("token");
+
+        verify(securityContextUserService).getUserByContextSecurity(any());
+        verify(userRepository).saveAndFlush(user);
     }
 }

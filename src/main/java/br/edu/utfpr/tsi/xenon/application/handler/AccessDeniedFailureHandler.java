@@ -10,7 +10,6 @@ import br.edu.utfpr.tsi.xenon.application.controller.EndpointsTranslator;
 import br.edu.utfpr.tsi.xenon.application.dto.ErrorBaseDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
-import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +43,7 @@ public record AccessDeniedFailureHandler(MessageSource messageSource)
     }
 
     @Override
-    public MessageSource getMessage() {
+    public MessageSource getMessageSource() {
         return messageSource;
     }
 }

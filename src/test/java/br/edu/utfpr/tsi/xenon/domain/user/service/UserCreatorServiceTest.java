@@ -59,8 +59,7 @@ class UserCreatorServiceTest {
             .password("abc12345")
             .confirmPassword("abc12345")
             .plateCar(faker.bothify("???-####"))
-            .modelCar("Model car")
-            .token("token");
+            .modelCar("Model car");
 
         var entity = getUserEntity();
         includeAccessCard(entity);

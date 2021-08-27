@@ -1,7 +1,11 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.contains;
@@ -14,10 +18,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.config.property.ApplicationDomainProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRenewPasswordDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.EmailTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
+import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.TokenRedisRepository;
 import com.github.javafaker.Faker;
@@ -189,5 +196,53 @@ class RenewPasswordServiceTest {
             .findTokenByKey(anyString());
 
         assertDoesNotThrow(() -> renewPasswordService.renewPassword(params));
+    }
+
+    @Test
+    @DisplayName("Deve lançar BusinessException quando senha atual não combina com senha salva")
+    void shouldThrowsBusinessExceptionWhenActualNotMatch() {
+        var pass = Faker.instance().internet().password();
+        var accessCard = new AccessCardEntity();
+        accessCard.setPassword(pass);
+
+        var input = new InputChangePasswordDto()
+            .actualPassword("actual")
+            .password("new_pass")
+            .confirmPassword("new_pass");
+
+        when(cryptPasswordEncoder.matches("actual", accessCard.getPassword())).thenReturn(FALSE);
+
+        var exception = assertThrows(BusinessException.class, () -> renewPasswordService.changePassword(accessCard, input));
+
+        assertEquals(MessagesMapper.PASS_ACTUAL_NOT_MATCH.getCode(), exception.getCode());
+        assertEquals(422, exception.getStatus());
+
+        verify(cryptPasswordEncoder).matches("actual", accessCard.getPassword());
+    }
+
+    @Test
+    @DisplayName("Deve lançar BusinessException quando senha atual não combina com senha salva")
+    void shouldThrowsBusinessExceptionWhenPassAndConfirmNotMatch() {
+        var faker = Faker.instance();
+        var pass = faker.internet().password();
+        var newPass = faker.internet().password();
+        var confirmPass = faker.internet().password();
+
+        var accessCard = new AccessCardEntity();
+        accessCard.setPassword(pass);
+
+        var input = new InputChangePasswordDto()
+            .actualPassword(pass)
+            .password(newPass)
+            .confirmPassword(confirmPass);
+
+        when(cryptPasswordEncoder.matches(pass, accessCard.getPassword())).thenReturn(TRUE);
+
+        var exception = assertThrows(BusinessException.class, () -> renewPasswordService.changePassword(accessCard, input));
+
+        assertEquals(MessagesMapper.PASS_AND_CONFIRM_NOT_MATCH.getCode(), exception.getCode());
+        assertEquals(422, exception.getStatus());
+
+        verify(cryptPasswordEncoder).matches(pass, accessCard.getPassword());
     }
 }

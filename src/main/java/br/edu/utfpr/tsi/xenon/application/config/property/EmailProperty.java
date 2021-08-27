@@ -7,6 +7,7 @@ import org.springframework.boot.context.properties.NestedConfigurationProperty;
 @Data
 @ConfigurationProperties("xenon.configurations.email")
 public class EmailProperty {
+
     private String host;
     private Integer port;
     private String protocol;
@@ -19,6 +20,7 @@ public class EmailProperty {
 
     @Data
     public static class TlSConfiguration {
+
         private Boolean enable;
         private Boolean required;
     }

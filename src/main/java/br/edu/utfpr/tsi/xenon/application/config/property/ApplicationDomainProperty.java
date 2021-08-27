@@ -6,5 +6,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @Data
 @ConfigurationProperties("xenon.configurations.application")
 public class ApplicationDomainProperty {
+
     private String domain;
 }

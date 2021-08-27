@@ -5,7 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import com.github.javafaker.Faker;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +35,9 @@ class SecurityContextUserServiceTest {
 
     @Mock
     private UserDetailsService accessCardRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private SecurityContextUserService service;
@@ -98,5 +106,30 @@ class SecurityContextUserServiceTest {
         verify(accessCardRepository).loadUserByUsername(anyString());
 
         assertEquals(authentication, SecurityContextHolder.getContext().getAuthentication());
+    }
+
+    @Test
+    @DisplayName("Deve retornar o usuário dono do token")
+    void shouldReturnUserOwnerToken() {
+        var authentication = mock(Authentication.class);
+        var securityContext = mock(SecurityContext.class);
+        var role = new RoleEntity();
+        var accessCard = new AccessCardEntity();
+        accessCard.setRoleEntities(List.of(role));
+        var user = new UserEntity();
+        user.setAccessCard(accessCard);
+        user.setTypeUser(TypeUser.STUDENTS.name());
+
+        SecurityContextHolder.setContext(securityContext);
+
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(accessCard);
+        when(userRepository.findByAccessCard(accessCard)).thenReturn(Optional.of(user));
+
+        service.getUserByContextSecurity("token");
+
+        verify(securityContext).getAuthentication();
+        verify(authentication).getPrincipal();
+        verify(userRepository).findByAccessCard(accessCard);
     }
 }

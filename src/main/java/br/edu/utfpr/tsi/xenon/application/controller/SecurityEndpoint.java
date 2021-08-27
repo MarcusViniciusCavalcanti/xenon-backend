@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 public class SecurityEndpoint implements SecurityApi, EndpointsTranslator {
+
     private final SecurityApplicationService securityApplicationService;
     private final MessageSource messageSource;
 
@@ -57,7 +58,7 @@ public class SecurityEndpoint implements SecurityApi, EndpointsTranslator {
     }
 
     @Override
-    public MessageSource getMessage() {
+    public MessageSource getMessageSource() {
         return messageSource;
     }
 }

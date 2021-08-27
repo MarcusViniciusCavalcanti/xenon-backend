@@ -20,6 +20,14 @@ public final class TokenApplication {
     @Getter
     private String token;
 
+    public static TokenApplication newInstance(String email) {
+        return new TokenApplication(email);
+    }
+
+    public static TokenApplication newInstance() {
+        return new TokenApplication(null);
+    }
+
     public void generateNewToken() {
         Assert.state(isNotBlank(key), "key não pode ser nulo");
         var params = "%s%s".formatted(key, RandomStringUtils.randomAlphabetic(10, 20));
@@ -47,14 +55,6 @@ public final class TokenApplication {
         }
 
         return FALSE;
-    }
-
-    public static TokenApplication newInstance(String email) {
-        return new TokenApplication(email);
-    }
-
-    public static TokenApplication newInstance() {
-        return new TokenApplication(null);
     }
 
 }

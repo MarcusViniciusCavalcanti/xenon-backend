@@ -6,7 +6,11 @@ import org.springframework.context.MessageSource;
 
 public interface EndpointsTranslator {
 
-    MessageSource getMessage();
+    MessageSource getMessageSource();
+
+    default String getMessage(String messagesMapper, Locale locale, String... args) {
+        return getMessageSource().getMessage(messagesMapper, args, locale);
+    }
 
     default Locale getLocale(String language) {
         if (StringUtils.isBlank(language) || "*".equals(language)) {
@@ -19,9 +23,5 @@ public interface EndpointsTranslator {
         }
 
         return Locale.forLanguageTag(language);
-    }
-
-    default String getMessage(String messagesMapper, Locale locale, String... args) {
-        return getMessage().getMessage(messagesMapper, args, locale);
     }
 }

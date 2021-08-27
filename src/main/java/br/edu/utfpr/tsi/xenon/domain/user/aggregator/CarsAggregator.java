@@ -1,11 +1,13 @@
 package br.edu.utfpr.tsi.xenon.domain.user.aggregator;
 
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.LIMIT_EXCEEDED_CAR;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_ALREADY;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_INVALID;
 import static java.lang.Boolean.TRUE;
 
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import java.util.Locale;
@@ -46,6 +48,8 @@ public class CarsAggregator {
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void includeNewCar(UserEntity user, String modelCar, String plateCar) {
+        checkLimitCars(plateCar, user);
+
         if (StringUtils.isBlank(modelCar)) {
             log.info("carro não cadatrado [modelo não informado]");
             return;
@@ -72,6 +76,7 @@ public class CarsAggregator {
             car.setModel(modelCar);
             car.setPlate(plateFormatted);
             car.setNumberAccess(0);
+            car.setUser(user);
 
             user.getCar().add(car);
         } else {
@@ -88,6 +93,12 @@ public class CarsAggregator {
 
         if (TRUE.equals(carRepository.exists(example))) {
             throw new PlateException(plate, PLATE_ALREADY.getCode());
+        }
+    }
+
+    private void checkLimitCars(String plate, UserEntity userEntity) {
+        if (userEntity.getCar().size() > 11) {
+            throw new BusinessException(422, LIMIT_EXCEEDED_CAR.getCode(), plate);
         }
     }
 }

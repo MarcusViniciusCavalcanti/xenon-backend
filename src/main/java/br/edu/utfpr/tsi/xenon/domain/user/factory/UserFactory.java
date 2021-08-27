@@ -12,8 +12,52 @@ import java.util.function.Supplier;
 
 public interface UserFactory {
 
-    UserEntity create(InputRegistryStudentDto input);
+    static UserFactory getInstance() {
+        return UserFactory.factory(userBuilder -> {
+            userBuilder.add(TypeUser.STUDENTS, () -> {
+                var user = new UserEntity();
+                user.setTypeUser(TypeUser.STUDENTS.name());
+                return user;
+            });
+            userBuilder.add(TypeUser.SERVICE, () -> {
+                var user = new UserEntity();
+                user.setTypeUser(TypeUser.SERVICE.name());
+                return user;
+            });
+            userBuilder.add(TypeUser.SPEAKER, () -> {
+                var user = new UserEntity();
+                user.setTypeUser(TypeUser.SPEAKER.name());
+                return user;
+            });
+        });
+    }
 //    UserEntity create(InputUserDto input);
+
+    private static UserFactory factory(Consumer<UserBuilder> builder) {
+        var map = new EnumMap<TypeUser, Supplier<UserEntity>>(TypeUser.class);
+        builder.accept(map::put);
+
+        return new UserFactory() {
+            @Override
+            public UserEntity create(InputRegistryStudentDto input) {
+                var user = map.get(TypeUser.STUDENTS).get();
+                user.setName(input.getName());
+                return user;
+            }
+
+//            @Override
+//            public UserEntity create(InputUserDto input) {
+//                var type = TypeUser.valueOf(input.getTypeUser().name());
+//                var user = map.get(type).get();
+//                user.setTypeUser(type.name());
+//                user.setName(input.getName());
+//                user.setAuthorisedAccess(input.getAuthorisedAccess());
+//                return user;
+//            }
+        };
+    }
+
+    UserEntity create(InputRegistryStudentDto input);
 
     default UserDto buildUserDto(UserEntity entity) {
         var user = new UserDto()
@@ -41,49 +85,5 @@ public interface UserFactory {
             .forEach(user::addCarsItem);
 
         return user;
-    }
-
-    static UserFactory getInstance() {
-        return UserFactory.factory(userBuilder -> {
-            userBuilder.add(TypeUser.STUDENTS, () -> {
-                var user = new UserEntity();
-                user.setTypeUser(TypeUser.STUDENTS.name());
-                return user;
-            });
-            userBuilder.add(TypeUser.SERVICE, () -> {
-                var user = new UserEntity();
-                user.setTypeUser(TypeUser.SERVICE.name());
-                return user;
-            });
-            userBuilder.add(TypeUser.SPEAKER, () -> {
-                var user = new UserEntity();
-                user.setTypeUser(TypeUser.SPEAKER.name());
-                return user;
-            });
-        });
-    }
-
-    private static UserFactory factory(Consumer<UserBuilder> builder) {
-        var map = new EnumMap<TypeUser, Supplier<UserEntity>>(TypeUser.class);
-        builder.accept(map::put);
-
-        return new UserFactory() {
-            @Override
-            public UserEntity create(InputRegistryStudentDto input) {
-                var user = map.get(TypeUser.STUDENTS).get();
-                user.setName(input.getName());
-                return user;
-            }
-
-//            @Override
-//            public UserEntity create(InputUserDto input) {
-//                var type = TypeUser.valueOf(input.getTypeUser().name());
-//                var user = map.get(type).get();
-//                user.setTypeUser(type.name());
-//                user.setName(input.getName());
-//                user.setAuthorisedAccess(input.getAuthorisedAccess());
-//                return user;
-//            }
-        };
     }
 }

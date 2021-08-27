@@ -15,6 +15,7 @@ import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 public interface UserServiceRegistryApplication {
 
     ValidatorEmail getValidator();
+
     UserRepository getUserRepository();
 
     default void checkIsEmail(String email) {

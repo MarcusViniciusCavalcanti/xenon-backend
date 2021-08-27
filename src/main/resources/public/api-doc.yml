@@ -149,7 +149,7 @@ tags:
 
       Para essas regras serem correspondida, o sistema gera alguns passos para o cadastro do usuário:
       * Validar o e-mail institucional, será valido o e-mail;
-      * Confirmação de e-mail, para que o cadastro seja ativado.
+      * Ativar conta, um e-mail será enviado com as instruções para o usuário ativar a conta.
 
       Após os passo informados acima, o aluno terá acesso ao sistema, porém deve ser observado que
       seu acesso ainda não está disponível, o aluno então deverá fazer o upload dos arquivos necessários
@@ -184,6 +184,7 @@ tags:
 
       __OBS:__ Todas as solicitações é necessário que o cliente usuário esteja autenticado e seu token válido, dentro da data de validade.
 paths:
+    # security
     /login/:
       post:
         summary: Acessar o sistema.
@@ -288,6 +289,8 @@ paths:
             $ref: '#/components/responses/ConfirmRenewPassResponse'
           '422':
             $ref: '#/components/responses/UnprocessableEntity'
+
+    # registry students
     /new-students/registry/:
       post:
         summary: Registra um novo estudante no sistema
@@ -322,7 +325,7 @@ paths:
                 $ref: '#/components/schemas/InputRegistryStudent'
         responses:
           '201':
-            $ref: '#/components/responses/UserRegistrySuccess'
+            $ref: '#/components/responses/UserRegistrySuccessResponse'
           '400':
             $ref: '#/components/responses/BadRequest'
           '409':
@@ -331,8 +334,37 @@ paths:
             $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
+    /activate-registry/:
+      get:
+        summary: Ativação de conta
+        tags:
+          - Registry
+        operationId: activateAccount
+        description: |-
+          ### Ativar conta
 
-    # profile
+          Passo necessário para usuário que fez o cadastro ativar a conta.
+        parameters:
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+          - in: query
+            description: Parametros para solicitação de ativar conta.
+            name: params
+            schema:
+              type: string
+              example: ?params=YWFhYWE=
+        responses:
+          '202':
+            $ref: '#/components/responses/ActiveAccountSuccessResponse'
+          '404':
+            $ref: '#/components/responses/NotFound'
+
+    # Profile
     /profile/me/:
       get:
         summary: Retornar o usuário dono do token
@@ -361,7 +393,7 @@ paths:
             description: Idioma da resposta para mensagens de texto.
         responses:
           '200':
-            $ref: '#/components/responses/UserOwnerToken'
+            $ref: '#/components/responses/UserOwnerTokenResponse'
           '401':
             $ref: '#/components/responses/Unauthorized'
           '500':
@@ -370,6 +402,10 @@ paths:
       patch:
         summary: Altera o nome do recurso usuário
         operationId: changeName
+        description: |-
+          ### Solicitação para troca de nome
+
+          Usuário poderá alterar seu nome quantas vezes quiser, desde que o nome não está já cadastrado.
         tags:
           - Profile
         parameters:
@@ -380,6 +416,12 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
         requestBody:
           description: Corpo da chamad para alterar o nome do usuário
           content:
@@ -393,8 +435,8 @@ paths:
             $ref: '#/components/responses/BadRequest'
           '401':
             $ref: '#/components/responses/Unauthorized'
-          '422':
-            $ref: '#/components/responses/UnprocessableEntity'
+          '404':
+            $ref: '#/components/responses/NotFound'
           '500':
             $ref: '#/components/responses/InternalServerError'
     /profile/include-new-car:
@@ -448,13 +490,17 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada que contém a placa do carro que será removido.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputRemoveCar'
         responses:
           '204':
             description: Remoção concluida com sucesso.
           '401':
             $ref: '#/components/responses/Unauthorized'
-          '422':
-            $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
     /profile/change-password:
@@ -477,6 +523,12 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
         requestBody:
           required: true
           description: Corpo da solicitação para troca de senha
@@ -486,9 +538,11 @@ paths:
                 $ref: '#/components/schemas/InputChangePassword'
         responses:
           '202':
-            $ref: '#/components/responses/RefreshPassSuccess'
+            $ref: '#/components/responses/RefreshPassSuccessResponse'
           '401':
             $ref: '#/components/responses/Unauthorized'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
     /profile/disable-account:
@@ -512,12 +566,10 @@ paths:
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
         responses:
-          '200':
-            $ref: '#/components/responses/UserAccessResponse'
+          '204':
+            description: Conta desativada com sucesso.
           '401':
             $ref: '#/components/responses/Unauthorized'
-          '422':
-            $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
 
@@ -697,17 +749,13 @@ components:
           pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
     InputRegistryStudent:
       required:
-        - token
         - email
         - name
         - password
         - confirmPassword
+        - modelCar
+        - plateCar
       properties:
-        token:
-          description: token de registro
-          type: string
-          example: 80192923-2a56-44d6-92ff-60441897fe7a
-          pattern: ([a-f0-9]{8}(-[a-f0-9]{4}){4}[a-f0-9]{8})
         email:
           description: e-mail da credencial do usuário, como ela que ele utilizara para acessar o sistema.
           type: string
@@ -785,6 +833,16 @@ components:
         confirmPassword:
           type: string
           description: Confirmação da senha.
+    InputRemoveCar:
+      type: object
+      required:
+        - plate
+      properties:
+        plate:
+          type: string
+          description: placa do carro que será removido
+          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
+          example: ABC-1A34
 
 
     # Params
@@ -866,7 +924,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ProcessResult'
-    UserRegistrySuccess:
+    UserRegistrySuccessResponse:
       description: >-
         Registro do usuário foi concluído com sucesso.
 
@@ -881,7 +939,7 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/User'
-    UserOwnerToken:
+    UserOwnerTokenResponse:
       description: >-
         Retorna o usuário correspondente ao token do header
       content:
@@ -900,13 +958,21 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Car'
-    RefreshPassSuccess:
+    RefreshPassSuccessResponse:
       description: >-
         Retornar mensagem de sucesso
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/ProcessResult'
+    ActiveAccountSuccessResponse:
+      description: >-
+        Retornar message de sucesso de ativação de conta.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ProcessResult'
+
 
     # errors
     BadRequest:

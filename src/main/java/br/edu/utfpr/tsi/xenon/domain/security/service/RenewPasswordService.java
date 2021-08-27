@@ -1,14 +1,21 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.*;
+import static java.lang.Boolean.*;
 import static java.lang.Boolean.TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 import br.edu.utfpr.tsi.xenon.application.config.property.ApplicationDomainProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRenewPasswordDto;
+import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
+import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageChangePasswordTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRenewPassTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRequestRenewPassTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.TokenApplication;
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.TokenRedisRepository;
 import java.util.Base64;
@@ -47,7 +54,9 @@ public class RenewPasswordService {
                 var url = createUrl(token, key);
 
                 saveToken(token, key);
-                sendEmail(input, url);
+                log.debug("Enviando e-mail para notificação solicitação de senha.");
+                var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
+                senderAdapter.sendEmail(template);
             }))
             .handleAsync((result, throwable) ->
                 catchError(result, throwable, "Erro na solicitação de pedido de senha {}"));
@@ -90,6 +99,27 @@ public class RenewPasswordService {
             catchError(result, throwable, "Erro na confirmação de pedido de senha {}"));
     }
 
+    public ProcessResultDto changePassword(AccessCardEntity accessCardEntity, InputChangePasswordDto input) {
+        log.info("Executando processo para troca de senha");
+
+        checkActualPassword(accessCardEntity, input.getActualPassword());
+        checkPasswordAndConfirmPassword(input);
+
+        log.debug("iniciando processo de criptografia de nova senha");
+        var newPassword = cryptPasswordEncoder.encode(input.getPassword());
+        accessCardEntity.setPassword(newPassword);
+
+        log.debug("salvando nova senha no cartão de acesso");
+        accessCardRepository.saveAndFlush(accessCardEntity);
+
+        log.debug("Enviando e-mail para notificação solicitação de senha.");
+        var template = new MessageChangePasswordTemplate(accessCardEntity.getUsername());
+        senderAdapter.sendEmail(template);
+
+        log.info("Processo concluído com sucesso.");
+        return new ProcessResultDto().result(CHANGE_PASS_SUCCESSFULLY.getCode());
+    }
+
     private String getEmail(KeyToken decodeParameter) {
         return decodeParameter.key.split("-")[0];
     }
@@ -104,12 +134,6 @@ public class RenewPasswordService {
         var token = arrayParameter[1];
 
         return new KeyToken(key, token);
-    }
-
-    private void sendEmail(InputRenewPasswordDto input, String url) {
-        log.debug("Enviando e-mail para notificação solicitação de senha.");
-        var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
-        senderAdapter.sendEmail(template);
     }
 
     private void saveToken(TokenApplication token, String key) {
@@ -146,6 +170,20 @@ public class RenewPasswordService {
             log.error(s, throwable.getMessage());
         }
         return result;
+    }
+
+    private void checkPasswordAndConfirmPassword(InputChangePasswordDto input) {
+        log.debug("Validando senha e confirmação de senha");
+        if (FALSE.equals(input.getPassword().equals(input.getConfirmPassword()))) {
+            throw new BusinessException(422, PASS_AND_CONFIRM_NOT_MATCH.getCode());
+        }
+    }
+
+    private void checkActualPassword(AccessCardEntity accessCardEntity, String actual) {
+        log.debug("Validando senha atual");
+        if (FALSE.equals(cryptPasswordEncoder.matches(actual, accessCardEntity.getPassword()))) {
+            throw new BusinessException(422, PASS_ACTUAL_NOT_MATCH.getCode());
+        }
     }
 
     record KeyToken(String key, String token) {

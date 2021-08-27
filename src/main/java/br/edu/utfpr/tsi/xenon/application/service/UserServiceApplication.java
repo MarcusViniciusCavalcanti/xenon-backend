@@ -1,22 +1,18 @@
 package br.edu.utfpr.tsi.xenon.application.service;
 
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.NAME_CHANGED_SUCCESSFULLY;
-import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.NAME_CHANGE_ERROR;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputNameUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
-import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
-import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
 import br.edu.utfpr.tsi.xenon.domain.user.service.UserCreatorService;
 import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorEmail;
 import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
-import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,16 +25,17 @@ public class UserServiceApplication implements UserServiceRegistryApplication {
     private final AccessCardRepository accessCardService;
     private final ValidatorEmail validatorEmail;
     private final UserRepository userRepository;
+    private final SecurityContextUserService securityContextUserService;
 
     @Transactional
     public UserDto getUserByToken(String authorization) {
         log.info("Executando recuperação de usuário por token");
         log.debug("Recuperando usuário dono do token {}", authorization);
         try {
-            return getAccessCardEntity(authorization)
+            return securityContextUserService.getUserByContextSecurity(authorization)
                 .map(userEntity -> UserFactory.getInstance().buildUserDto(userEntity))
                 .orElse(new UserDto());
-        } catch (NullPointerException exception) {
+        } catch (Exception exception) {
             log.debug(exception.getMessage());
             log.warn(
                 """ 
@@ -60,7 +57,7 @@ public class UserServiceApplication implements UserServiceRegistryApplication {
 
     @Transactional
     public ProcessResultDto changeName(InputNameUserDto input, String authorization) {
-        return getAccessCardEntity(authorization)
+        return securityContextUserService.getUserByContextSecurity(authorization)
             .map(userEntity -> {
                 checkNameExist(input.getName());
                 userEntity.setName(input.getName());
@@ -68,7 +65,7 @@ public class UserServiceApplication implements UserServiceRegistryApplication {
                 userRepository.saveAndFlush(userEntity);
 
                 return new ProcessResultDto().result(NAME_CHANGED_SUCCESSFULLY.getCode());
-            }).orElse(new ProcessResultDto().result(NAME_CHANGE_ERROR.getCode()));
+            }).orElse(new ProcessResultDto().result(NAME_CHANGED_SUCCESSFULLY.getCode()));
     }
 
 //    @Transactional
@@ -111,16 +108,7 @@ public class UserServiceApplication implements UserServiceRegistryApplication {
 //
 //        userRepository.saveAndFlush(user);
 //        return UserFactory.getInstance().buildUserDto(user);
-
-//    }
-
-    private Optional<UserEntity> getAccessCardEntity(String authorization) {
-        var principal = (AccessCardEntity) SecurityContextHolder.getContext()
-            .getAuthentication()
-            .getPrincipal();
-
-        return userRepository.findByAccessCard(principal);
-    }
+    //    }
 
     @Override
     public ValidatorEmail getValidator() {
