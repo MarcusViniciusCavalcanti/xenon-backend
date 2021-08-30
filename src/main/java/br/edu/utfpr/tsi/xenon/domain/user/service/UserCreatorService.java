@@ -1,6 +1,8 @@
 package br.edu.utfpr.tsi.xenon.domain.user.service;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
+import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AccessCardAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AvatarAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.CarsAggregator;
@@ -47,18 +49,18 @@ public class UserCreatorService {
         return entity;
     }
 
-//    @Transactional(propagation = Propagation.MANDATORY)
-//    public UserDto createNewUser(InputUserDto input, String pass) {
-//        log.info("Executando cadastro de usuário");
-//        var userFactory = UserFactory.getInstance();
-//        var entity = userFactory.create(input);
-//        var type = TypeUser.valueOf(input.getTypeUser().name());
-//
-//        accessCardAggregator.includeAccessCard(entity, input.getEmail(), pass, pass);
-//        rolesAggregator.includeRoles(entity.getAccessCard(), type, input.getRoles());
-//        avatarAggregator.includeDefaultAvatarUrl(entity);
-//        entity = userRepository.saveAndFlush(entity);
-//
-//        return userFactory.buildUserDto(entity);
-//    }
+    @Transactional(propagation = Propagation.MANDATORY)
+    public UserDto createNewUser(InputUserDto input, String pass) {
+        log.info("Executando cadastro de usuário");
+        var userFactory = UserFactory.getInstance();
+        var entity = userFactory.create(input);
+        var type = TypeUser.valueOf(input.getTypeUser().name());
+
+        accessCardAggregator.includeAccessCard(entity, input.getEmail(), pass, pass);
+        rolesAggregator.includeRoles(entity.getAccessCard(), type, input.getRoles());
+        avatarAggregator.includeDefaultAvatarUrl(entity);
+        entity = userRepository.saveAndFlush(entity);
+
+        return userFactory.buildUserDto(entity);
+    }
 }

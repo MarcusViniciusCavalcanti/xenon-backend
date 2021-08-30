@@ -90,8 +90,6 @@ tags:
   - name: Security
     x-displayName: Segurança.
     description: |-
-      ## Segurança
-
       As requisições feitas para Api serão STATELESS (**Sem estado**), logo a utilização de Token para
       autorizar uma determinada requisição se faz necessário, assim a Api para Autorizar e autenticar um usuário
       fica a cargo do JWT.
@@ -155,18 +153,6 @@ tags:
       seu acesso ainda não está disponível, o aluno então deverá fazer o upload dos arquivos necessários
       __foto__, __documento do carro__, para então, poder ser liberado no sistema.
 
-  - name: User
-    x-displayName: Usuários
-    description: |-
-      Recurso User representa um abstração de um usuário do sistema, este recurso conteém todas as informações
-      necessárias de um usuário do sistema exemplo:
-      * Nome;
-      * E-mail;
-      * Tipo do usuário, e outros.
-
-
-      Dentre outras informações, dentro deste recurso também está presente os papeis do usuário no sistema
-      informação necessária para autorizar que este mesmo usuário acesse outros recursos da aplicação.
   - name: Profile
     x-displayname: Perfil
     description: |-
@@ -183,6 +169,33 @@ tags:
       * Canelando sua conta, solicitando `/disabled-account`
 
       __OBS:__ Todas as solicitações é necessário que o cliente usuário esteja autenticado e seu token válido, dentro da data de validade.
+  - name: User
+    x-displayName: Usuários
+    description: |-
+      Recurso User representa um abstração de um usuário do sistema, este recurso contém todas as informações
+      necessárias de um usuário do sistema exemplo:
+      * Nome;
+      * E-mail;
+      * Tipo do usuário;
+      * Papeis, e outros.
+
+
+      Dentre outras informações, dentro deste recurso também está presente os papeis do usuário no sistema
+      informação necessária para autorizar que este mesmo usuário acesse outros recursos da aplicação.
+
+      O Xenon dispõe de 3 tipos de usuário:
+      * `STUDENTS` usuário estudante
+        * São todos os usuários alunos, da utfpr.
+        * Este tipo de usuário poderá ter apenas perfil de `DRIVER` motorista.
+      * `SERVICE` usuário servidor.
+        * Corresponde a qualquer usuário que compõe o quadro de funcionários efetivos ou não.
+        * O usuário `SERVICE` poderá ter papeis de `ADMIN` administrador, `OPERATOR` operador, `DRIVER` motorista.
+      * `SPEAKER` usuário palestrante
+        * São usuários palestrantes.
+        * Assim como os usuários do tipo `STUDENTS` apenas é permitido o perfil `DRIVER`.
+
+      Cada papel do usuário, lhe concede certas autorizações para manipular os recursos do sistema. Observe cada
+      uri do recursos para observar qual papel é necessário para manipular o recurso, na sessão regras da solicitação.
 paths:
     # security
     /login/:
@@ -480,6 +493,12 @@ paths:
       delete:
         summary: Remove um recurso carro do usuário
         operationId: removeCar
+        description: |-
+          ### Remover Carro
+
+          O usuário poderá remover o carro quando quiser, isto implica em retirar o carro da lista
+          de carros ativos para acessar o estacionamento. Esta ação tem efeitos permanetes, porém os
+          dados de acesso não será removidos. O usuário ainda verá as informações de acessos deste carro.
         tags:
           - Profile
         parameters:
@@ -555,6 +574,15 @@ paths:
           O usuário poderá desativar sua conta quando quiser, neste caso ele perderá todo o acesso ao sistema
           * acessar a aplicação
           * acessar o estacionamento.
+
+          Está ação será permanente, alguns dados do usuário será mantido na base de dados, são eles:
+          * Dados de acessos;
+          * Nome;
+          * Email;
+          * Tipo do usuário;
+          * Papel.
+
+          A lista de carro será removida completamente assim como os documentos adicionados, avatar.
         tags:
           - Profile
         parameters:
@@ -572,6 +600,342 @@ paths:
             $ref: '#/components/responses/Unauthorized'
           '500':
             $ref: '#/components/responses/InternalServerError'
+
+    # User
+    /users/all:
+      get:
+        summary: Retorna uma objeto Page de usuários
+        operationId: getAllUsers
+        tags:
+          - User
+        description: |-
+          ### Solictação de recursos Usuários
+
+          Uma objeto de representação de página contento uma lista finita de Usuários será retornado
+          nesta solicitação, a quantidade elementos e qual página deve ser retornada será informada
+          no query da url, caso as informações não forem informadas, a Api retornara com os valores
+          padrões:
+
+          * quantidade de elementos (size) 5
+          * página (page) 0, indicando que será a primeira página
+          * ordernada por dada de criação (sorted) createdAt
+          * ordenada do primeiro para o ultimo (sorteDirection) [DESC]
+
+          Regras da solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
+
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: query
+            description: Filtro da solicitação, este filtro auxilia para uma busca mais customizada.
+            name: params
+            schema:
+              $ref: '#/components/schemas/ParamsQuerySearchUser'
+            style: form
+            explode: true
+        responses:
+          '200':
+            $ref: '#/components/responses/UserPageResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /users/:
+      get:
+        summary: Retorna um recurso Usuário.
+        description: |-
+          ### Solicitação para receber um recurso usuário.
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
+
+          Com base no id informado no path da requisição, um recurso usuário será retornado.
+        operationId: getUserById
+        tags:
+          - User
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
+          - in: path
+            name: id
+            schema:
+              type: integer
+              format: int64
+              example: 1
+              description: id do recurso a ser solicitado
+        responses:
+          '200':
+            $ref: '#/components/responses/UserGetIdResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      post:
+        summary: Cria um recurso Usuário.
+        description: |-
+          ### Solicitação para criar um recurso usuário.
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
+
+          Criará um recurso usuário que representa uma abstração de uma pessoa que utiliza o sistema
+          seja para solicitar acesso ao estacionamento, administrar o sistema Xenon ou operar.
+        operationId: createNewUser
+        tags:
+          - User
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada que contém as informações para criar um recurso usuário.
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputUser'
+        responses:
+          '201':
+            $ref: '#/components/responses/UserCreatedResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      put:
+        summary: Atualiza um recurso Usuário.
+        description: |-
+          ### Solicitação para atualizar um recurso usuário.
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de administrador. [ROLE_ADMIN]
+
+          O administrador poderá atualizar quase todos os dados do usuário, apenas a lista dos carros
+          cadastrados o usuário dono das informações pode manipular.
+        operationId: updateUser
+        tags:
+          - User
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: path
+            name: id
+            description: id do recurso usuário
+            schema:
+              type: integer
+              format: int64
+              example: 1
+        requestBody:
+          description: Corpo da chamada que contém as informações para atualizar um recurso usuário.
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputUpdateUser'
+        responses:
+          '200':
+            $ref: '#/components/responses/UserCreatedResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      delete:
+        summary: Desativa a conta do usuário
+        description: |-
+          ### Solicitação para desativar conta do usuário
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de administrador. [ROLE_ADMIN]
+
+          Uma conta desativa implica que o usuário perdera o acesso ao sistema, não só como também, será
+          desabilitado seu acesso ao estacionamento.
+
+          Está ação será permanente, alguns dados do usuário será mantido na base de dados, são eles:
+          * Dados de acessos;
+          * Nome;
+          * Email;
+          * Tipo do usuário;
+          * Papel.
+          * Motivo da remoção do usuário.
+
+          A lista de carro será removida completamente assim como os documentos adicionados, avatar.
+        tags:
+          - User
+        operationId: disabledUserAccount
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada para desativar a conta do usuário
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputAccessUser'
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /users/disabled/access:
+      patch:
+        summary: Remove autorização de acesso do usuário.
+        tags:
+          - User
+        operationId: disableUserAccess
+        description: |-
+          ### Solicitação para remover autorização do usuário
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de administrador. [ROLE_ADMIN]
+
+          Uma usuário sem autorização de acesso implica que o usuário terá seu acesso ao estacionamento
+          bloqueado.
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada para remover autorização de acesso do usuário
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputAccessUser'
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /users/enabled/access:
+      patch:
+        summary: Autoriza acesso do usuário.
+        tags:
+          - User
+        operationId: enabledUserAccess
+        description: |-
+          ### Solicitação para autorizar acesso do usuário
+
+          Regras para solicitação:
+          * Ser com cliente autenticado
+          * Ser autorizada com papel de administrador. [ROLE_ADMIN]
+
+          Adiciona autorização de acesso para o usuário.
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          description: Corpo da chamada para autorizar o acesso do usuário
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputAccessUser'
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+
 
 
 components:
@@ -843,6 +1207,122 @@ components:
           description: placa do carro que será removido
           pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
           example: ABC-1A34
+    InputUser:
+      required:
+        - email
+        - name
+        - typeUser
+        - roles
+      properties:
+        email:
+          description: e-mail da credencial do usuário, como ela que ele utilizara para acessar o sistema.
+          example: email@email.com.br
+          type: string
+          pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+        name:
+          description: nome do usuário
+          example: Fulano de Tal
+          type: string
+          minimum: 10
+          maximum: 255
+        typeUser:
+          type: string
+          example: SERVICE
+          enum:
+            - STUDENTS
+            - SPEAKER
+            - SERVICE
+          description: |-
+            * `STUDENTS` - Tipo de usuário estudante.
+            * `SPEAKER`  - Tipo de usuário palestrante.
+            * `SERVICE`  - Tipo de usuário servidor.
+        roles:
+          type: array
+          items:
+            type: integer
+            format: int64
+          maxItems: 3
+          minItems: 1
+          description: papeis do usuário
+          example: [1,2,3]
+        enabled:
+          type: boolean
+          description: define se a conta do usuário está ativa ou não
+          example: true
+        authorisedAccess:
+          type: boolean
+          description: define o acesso do usuário ao estacionamento
+          example: true
+        modelCar:
+          type: string
+          description: Modelo do carro
+          example: Gol 1.0
+        plateCar:
+          type: string
+          description: placa do carro, placas no formato mercosu são aceitas
+          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
+          example: ABC-1A34
+    InputUpdateUser:
+      required:
+        - email
+        - name
+        - typeUser
+        - roles
+      properties:
+        email:
+          description: e-mail da credencial do usuário, como ela que ele utilizara para acessar o sistema.
+          example: email@email.com.br
+          type: string
+          pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+        name:
+          description: nome do usuário
+          example: Fulano de Tal
+          type: string
+          minimum: 10
+          maximum: 255
+        typeUser:
+          type: string
+          example: SERVICE
+          enum:
+            - STUDENTS
+            - SPEAKER
+            - SERVICE
+          description: |-
+            * `STUDENTS` - Tipo de usuário estudante.
+            * `SPEAKER`  - Tipo de usuário palestrante.
+            * `SERVICE`  - Tipo de usuário servidor.
+        roles:
+          type: array
+          items:
+            type: integer
+            format: int64
+          maxItems: 3
+          minItems: 1
+          description: papeis do usuário
+          example: [ 1,2,3 ]
+        enabled:
+          type: boolean
+          description: define se a conta do usuário está ativa ou não
+          example: true
+        authorisedAccess:
+          type: boolean
+          description: define o acesso do usuário ao estacionamento
+          example: true
+    InputAccessUser:
+      type: object
+      required:
+        - userId
+        - reason
+      properties:
+        userId:
+          type: integer
+          format: int64
+          description: Identificador do usuário
+          example: 1
+        reason:
+          type: string
+          description: motivo da ação
+          example: motivo da ação que originou.
 
 
     # Params
@@ -972,7 +1452,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ProcessResult'
-
+    UserPageResponse:
+      description: Retorno de uma página com recursos usuários
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PageUser'
+    UserGetIdResponse:
+      description: Usuário encontrado e retornado com sucesso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
+    UserCreatedResponse:
+      description: Usuário criado com sucesso.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/User'
 
     # errors
     BadRequest:

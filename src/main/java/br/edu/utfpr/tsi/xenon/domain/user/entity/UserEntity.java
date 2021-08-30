@@ -30,7 +30,7 @@ public class UserEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "name", nullable = false, unique = true)
+    @Column(name = "name", nullable = false)
     private String name;
 
     @OneToOne
@@ -53,6 +53,9 @@ public class UserEntity {
 
     @Column(name = "avatar")
     private String avatar;
+
+    @Column(name = "disable_account_reason")
+    private String disableReason;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<CarEntity> car = new ArrayList<>();

@@ -11,7 +11,7 @@
     </parent>
     <groupId>br.edu.utfpr.tsi.xenon</groupId>
     <artifactId>xenon</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>xenon-backend</name>
     <description>Demo project for Spring Boot</description>
 

@@ -97,7 +97,7 @@ public class CarsAggregator {
     }
 
     private void checkLimitCars(String plate, UserEntity userEntity) {
-        if (userEntity.getCar().size() > 11) {
+        if (userEntity.getCar().size() > 5) {
             throw new BusinessException(422, LIMIT_EXCEEDED_CAR.getCode(), plate);
         }
     }

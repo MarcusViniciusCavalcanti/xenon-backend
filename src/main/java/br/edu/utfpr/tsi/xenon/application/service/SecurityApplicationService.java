@@ -12,10 +12,12 @@ import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.service.AccessTokenService;
 import br.edu.utfpr.tsi.xenon.domain.security.service.RenewPasswordService;
 import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import java.util.Collections;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -73,13 +75,18 @@ public class SecurityApplicationService {
     }
 
     @Transactional
-    public void disableAccount(String authorization) {
+    public void disableAccount(String authorization, String reason) {
         securityContextUserService.getUserByContextSecurity(authorization)
-            .ifPresent(userEntity -> {
-                userEntity.setAuthorisedAccess(FALSE);
-                userEntity.getAccessCard().setEnabled(FALSE);
+            .ifPresent(disableAccount(reason));
+    }
 
-                userRepository.saveAndFlush(userEntity);
-            });
+    private Consumer<UserEntity> disableAccount(String reason) {
+        return userEntity -> {
+            userEntity.setAuthorisedAccess(FALSE);
+            userEntity.getAccessCard().setEnabled(FALSE);
+            userEntity.setDisableReason(reason);
+
+            userRepository.saveAndFlush(userEntity);
+        };
     }
 }

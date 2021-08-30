@@ -1,6 +1,7 @@
 package br.edu.utfpr.tsi.xenon.domain.user.service;
 
 import static br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser.STUDENTS;
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -8,6 +9,8 @@ import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.verify;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
+import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto.TypeUserEnum;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AccessCardAggregator;
@@ -20,9 +23,11 @@ import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import com.github.javafaker.Faker;
 import java.util.List;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.provider.Arguments;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -99,6 +104,44 @@ class UserCreatorServiceTest {
             .includeDefaultAvatarUrl(any(UserEntity.class));
     }
 
+    @Test
+    @DisplayName("Deve criar um usuário com sucesso")
+    void shouldHaveCreateNewUser() {
+        var faker = Faker.instance();
+        var input = new InputUserDto()
+            .email(faker.internet().emailAddress())
+            .name(faker.name().fullName())
+            .typeUser(TypeUserEnum.STUDENTS)
+            .modelCar(faker.rockBand().name())
+            .plateCar(faker.bothify("???-#?##", TRUE))
+            .addRolesItem(1L)
+            .enabled(TRUE)
+            .authorisedAccess(TRUE);
+
+        var entity = getUserEntity();
+        includeAccessCard(entity);
+        includeCars(entity);
+
+        doNothing()
+            .when(accessCardAggregator)
+            .includeAccessCard(
+                any(UserEntity.class),
+                eq(input.getEmail()),
+                eq("pass"),
+                eq("pass"));
+        doNothing()
+            .when(carsAggregator)
+            .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
+        doNothing()
+            .when(rolesAggregator)
+            .includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
+        doNothing()
+            .when(avatarAggregator)
+            .includeDefaultAvatarUrl(any(UserEntity.class));
+
+
+    }
+
 //    @Test
 //    @DisplayName("Deve lançar exception quando recurso não existe")
 //    void shouldThrowsExceptionWhenUserNotFound() {
@@ -110,6 +153,31 @@ class UserCreatorServiceTest {
 //        assertEquals("usuário", exception.getResourceName());
 //        assertEquals("userId: 1", exception.getArgumentSearch());
 //    }
+
+    private static Stream<Arguments> providerArgsToCreateUser() {
+        var faker = Faker.instance();
+        var inputTypeStudents = new InputUserDto()
+            .email(faker.internet().emailAddress())
+            .name(faker.name().fullName())
+            .typeUser(TypeUserEnum.STUDENTS)
+            .modelCar(faker.rockBand().name())
+            .plateCar(faker.bothify("???-#?##", TRUE))
+            .addRolesItem(1L)
+            .enabled(TRUE)
+            .authorisedAccess(TRUE);
+
+        var inputTypeService = new InputUserDto()
+            .email(faker.internet().emailAddress())
+            .name(faker.name().fullName())
+            .typeUser(TypeUserEnum.SERVICE)
+            .modelCar(faker.rockBand().name())
+            .plateCar(faker.bothify("???-#?##", TRUE))
+            .addRolesItem(1L)
+            .enabled(TRUE)
+            .authorisedAccess(TRUE);
+
+        return null;
+    }
 
     private UserEntity getUserEntity() {
         var entity = new UserEntity();

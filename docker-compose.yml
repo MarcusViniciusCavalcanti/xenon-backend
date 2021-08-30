@@ -1,0 +1,17 @@
+version: '3.6'
+services:
+  postgres:
+    container_name: xenon_database
+    image: postgres:alpine
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_PASSWORD: xenon
+      POSTGRES_USER: xenon
+      POSTGRES_DB: xenon
+  redis:
+    container_name: xenon_redis
+    image: library/redis:alpine
+    ports:
+      - 6379:6379
+

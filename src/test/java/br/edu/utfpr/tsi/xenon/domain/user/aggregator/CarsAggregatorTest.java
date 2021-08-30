@@ -111,11 +111,11 @@ class CarsAggregatorTest {
     }
 
     @Test
-    @DisplayName("Deve lançar BusinessException quando tentar incluir carro mas, atingiu o limite de 10")
+    @DisplayName("Deve lançar BusinessException quando tentar incluir carro mas, atingiu o limite de 5")
     void shouldThrowsBusinessExceptionCarsExceededLimit() {
         var user = new UserEntity();
 
-        var cars = IntStream.rangeClosed(0, 11).boxed()
+        var cars = IntStream.rangeClosed(0, 5).boxed()
             .map(index -> {
                 var car = new CarEntity();
                 car.setId(index.longValue());

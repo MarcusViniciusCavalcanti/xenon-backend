@@ -28,6 +28,7 @@ public class RegistryStudentsEndpoint implements RegistryApi, EndpointsTranslato
     public ResponseEntity<UserDto> registerNewStudents(
         InputRegistryStudentDto inputRegistryStudentDto, String acceptLanguage) {
         log.info("Recebendo solicitação de registro.");
+        log.debug("Recebendo solicitação de registro. input: '[{}]'", inputRegistryStudentDto);
 
         var user =
             registryNewStudentsApplicationService.registryNewStudents(inputRegistryStudentDto);
@@ -39,6 +40,8 @@ public class RegistryStudentsEndpoint implements RegistryApi, EndpointsTranslato
     @GetMapping("/activate-registry")
     public ResponseEntity<ProcessResultDto> activateAccount(String acceptLanguage, String params) {
         log.info("Recebendo solicitação para ativar conta");
+        log.debug("Recebendo solicitação ativar conta. params: '[{}]'", params);
+
         var result = registryNewStudentsApplicationService.activateAccount(params);
         var locale = getLocale(acceptLanguage);
         var message = getMessage(result.getResult(), locale);

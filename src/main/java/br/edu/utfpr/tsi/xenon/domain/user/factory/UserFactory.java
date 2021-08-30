@@ -2,6 +2,7 @@ package br.edu.utfpr.tsi.xenon.domain.user.factory;
 
 import br.edu.utfpr.tsi.xenon.application.dto.CarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
+import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.RoleDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto.TypeEnum;
@@ -31,7 +32,6 @@ public interface UserFactory {
             });
         });
     }
-//    UserEntity create(InputUserDto input);
 
     private static UserFactory factory(Consumer<UserBuilder> builder) {
         var map = new EnumMap<TypeUser, Supplier<UserEntity>>(TypeUser.class);
@@ -45,17 +45,19 @@ public interface UserFactory {
                 return user;
             }
 
-//            @Override
-//            public UserEntity create(InputUserDto input) {
-//                var type = TypeUser.valueOf(input.getTypeUser().name());
-//                var user = map.get(type).get();
-//                user.setTypeUser(type.name());
-//                user.setName(input.getName());
-//                user.setAuthorisedAccess(input.getAuthorisedAccess());
-//                return user;
-//            }
+            @Override
+            public UserEntity create(InputUserDto input) {
+                var type = TypeUser.valueOf(input.getTypeUser().name());
+                var user = map.get(type).get();
+                user.setTypeUser(type.name());
+                user.setName(input.getName());
+                user.setAuthorisedAccess(input.getAuthorisedAccess());
+                return user;
+            }
         };
     }
+
+    UserEntity create(InputUserDto input);
 
     UserEntity create(InputRegistryStudentDto input);
 

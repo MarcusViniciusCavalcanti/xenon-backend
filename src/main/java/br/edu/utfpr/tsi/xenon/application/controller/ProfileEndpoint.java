@@ -67,6 +67,12 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
         InputChangePasswordDto inputChangePasswordDto,
         String authorization,
         String acceptLanguage) {
+        log.info("Recebendo solicitação troca de nome");
+        log.debug(
+            "Recebendo solicitação troca de senha  autorização:'[{}]', input: '[{}]'",
+            authorization,
+            inputChangePasswordDto);
+
         var result = securityApplicationService.changePass(inputChangePasswordDto, authorization);
 
         var locale = getLocale(acceptLanguage);
@@ -78,7 +84,10 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
     @Override
     @DeleteMapping("/disable-account")
     public ResponseEntity<Void> disableAccount(String authorization) {
-        securityApplicationService.disableAccount(authorization);
+        log.info("Recebendo solicitação desativação de conta");
+        log.debug("Recebendo solicitação desativação de conta '[{}]'", authorization);
+
+        securityApplicationService.disableAccount(authorization, "Usuário desativou a conta.");
         return ResponseEntity.noContent().build();
     }
 
@@ -87,6 +96,11 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
     public ResponseEntity<CarDto> includeNewCar(
         String authorization,
         InputNewCarDto inputNewCarDto) {
+        log.info("Recebendo solicitação inclusão de novo carro");
+        log.debug("Recebendo solicitação inclusão de novo carro '[{}]' input: '[{}]'",
+            authorization,
+            inputNewCarDto);
+
         var car = carApplicationService.includeNewCar(inputNewCarDto, authorization);
         return ResponseEntity.ok(car);
     }
@@ -95,6 +109,11 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
     @DeleteMapping("/remove-car")
     public ResponseEntity<Void> removeCar(String authorization,
         InputRemoveCarDto inputRemoveCarDto) {
+        log.info("Recebendo solicitação remoção de carro");
+        log.debug("Recebendo solicitação remoção de carro '[{}]' input: '[{}]'",
+            authorization,
+            inputRemoveCarDto);
+
         carApplicationService.removeCar(inputRemoveCarDto, authorization);
         return ResponseEntity.noContent().build();
     }

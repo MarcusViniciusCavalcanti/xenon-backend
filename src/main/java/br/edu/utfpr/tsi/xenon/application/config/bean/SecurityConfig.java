@@ -33,16 +33,17 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     private static final String[] POST_URL_PUBLIC = new String[] {
-        "/api/v3/api-docs/swagger-config/**",
         "/new-students/**",
         "/login/**",
         "/request-renew-pass/**",
         "/new-students/registry/**",
     };
     private static final String[] GET_URL_PUBLIC = new String[] {
-        "/api/swagger-ui/**",
         "/request-renew-pass/**",
         "/activate-registry/**",
+        "/swagger-ui/**",
+        "/v3/api-docs/swagger-config/**",
+        "/api-doc.yml",
     };
 
     private final UserDetailsService userDetailsService;
@@ -110,7 +111,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
     private void configureCorsAndCsrf(HttpSecurity http) throws Exception {
-        http.csrf().disable()
-            .cors();
+        http.csrf().disable().cors();
     }
 }
