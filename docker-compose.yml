@@ -5,6 +5,8 @@ services:
     image: postgres:alpine
     ports:
       - 5432:5432
+    expose:
+      - 5432
     environment:
       POSTGRES_PASSWORD: xenon
       POSTGRES_USER: xenon
@@ -14,4 +16,21 @@ services:
     image: library/redis:alpine
     ports:
       - 6379:6379
+    expose:
+      - 6379
+  api:
+    container_name: xenon_api
+    image: cavalcanti16/xenon-backend:0.0.1
+    user: application
+    depends_on:
+      - postgres
+      - redis
+    ports:
+      - 8080:8080
+    expose:
+      - 8080
+    volumes:
+    - ./config:/backend/config
 
+volumes:
+  config:

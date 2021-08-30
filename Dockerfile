@@ -10,7 +10,7 @@ RUN useradd -ms /bin/bash application
 WORKDIR /backend
 
 RUN chown application:application /backend
-COPY --from=api /usr/src/api/target/xenon-0.0.1.jar .
+COPY --from=api /usr/src/api/target/xenon-api.jar .
 
-ENTRYPOINT ["java", "-jar", "/backend/xenon-0.0.1.jar"]
+ENTRYPOINT ["java", "-jar", "/backend/xenon-api.jar"]
 CMD ["--spring.profiles.active=docker"]

@@ -1,0 +1,29 @@
+xenon:
+  configurations:
+    datasource:
+      driver: org.postgresql.Driver
+      url: jdbc:postgresql://postgres:5432/xenon
+      username: xenon
+      password: xenon
+    file:
+      avatarUrl: avatar
+      docUrl:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+    email:
+      host: smtp.mailtrap.io
+      port: 2525
+      protocol: smtp
+      username: bf7ca5083ad731
+      password: 72fa20f0eeceb5
+      auth: false
+      tls:
+        enable: true
+        required: true
+    security:
+      token:
+        expiration: 3600
+        secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
+    application:
+      domain: http://localhost:8080/api
