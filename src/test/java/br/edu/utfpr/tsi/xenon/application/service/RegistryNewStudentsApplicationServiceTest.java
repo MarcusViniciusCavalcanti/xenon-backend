@@ -79,7 +79,7 @@ class RegistryNewStudentsApplicationServiceTest {
         when(validatorEmail.isEmail(input.getEmail())).thenReturn(TRUE);
         when(validatorEmail.validateEmailStudents(input.getEmail())).thenReturn(TRUE);
         when(validatorEmail.isExistEmail(input.getEmail())).thenReturn(FALSE);
-        when(userCreatorService.registryNewStudent(input)).thenReturn(user);
+        when(userCreatorService.createNewStudents(input)).thenReturn(user);
         when(applicationDomainProperty.getDomain()).thenReturn("domain");
         doNothing()
             .when(senderAdapter)
@@ -91,7 +91,7 @@ class RegistryNewStudentsApplicationServiceTest {
         verify(validatorEmail).isEmail(input.getEmail());
         verify(validatorEmail).validateEmailStudents(input.getEmail());
         verify(validatorEmail).isExistEmail(input.getEmail());
-        verify(userCreatorService).registryNewStudent(input);
+        verify(userCreatorService).createNewStudents(input);
         verify(senderAdapter, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
             .sendEmail(any(EmailTemplate.class));
         verify(userRepository).saveAndFlush(user);

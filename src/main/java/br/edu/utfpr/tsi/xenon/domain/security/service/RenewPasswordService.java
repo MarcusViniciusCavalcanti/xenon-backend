@@ -47,7 +47,8 @@ public class RenewPasswordService {
     @Async
     public void checkSolicitation(InputRenewPasswordDto input) {
         log.info("Executando processo de solicitação de nova senha para: {}", input.getEmail());
-        CompletableFuture.runAsync(() -> accessCardRepository.findByUsername(input.getEmail())
+        CompletableFuture.runAsync(() ->
+            accessCardRepository.findByUsername(input.getEmail())
             .ifPresent(accessCardEntity -> {
                 var token = createToken(input.getEmail());
                 var key = createKey(input.getEmail(), accessCardEntity.getId());

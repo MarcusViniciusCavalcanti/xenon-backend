@@ -2,7 +2,6 @@ package br.edu.utfpr.tsi.xenon.domain.user.service;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
-import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AccessCardAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AvatarAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.CarsAggregator;
@@ -23,14 +22,13 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class UserCreatorService {
 
-    private final UserRepository userRepository;
     private final AccessCardAggregator accessCardAggregator;
     private final RolesAggregator rolesAggregator;
     private final CarsAggregator carsAggregator;
     private final AvatarAggregator avatarAggregator;
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public UserEntity registryNewStudent(InputRegistryStudentDto input) {
+    public UserEntity createNewStudents(InputRegistryStudentDto input) {
         log.info("Executando cadastro de usuário");
         var userFactory = UserFactory.getInstance();
         var entity = userFactory.create(input);
@@ -50,7 +48,7 @@ public class UserCreatorService {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
-    public UserDto createNewUser(InputUserDto input, String pass) {
+    public UserEntity createNewUser(InputUserDto input, String pass) {
         log.info("Executando cadastro de usuário");
         var userFactory = UserFactory.getInstance();
         var entity = userFactory.create(input);
@@ -59,8 +57,8 @@ public class UserCreatorService {
         accessCardAggregator.includeAccessCard(entity, input.getEmail(), pass, pass);
         rolesAggregator.includeRoles(entity.getAccessCard(), type, input.getRoles());
         avatarAggregator.includeDefaultAvatarUrl(entity);
-        entity = userRepository.saveAndFlush(entity);
+        carsAggregator.includeNewCar(entity, input.getModelCar(), input.getPlateCar());
 
-        return userFactory.buildUserDto(entity);
+        return entity;
     }
 }

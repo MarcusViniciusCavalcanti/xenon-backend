@@ -1,122 +1,44 @@
 package br.edu.utfpr.tsi.xenon.application.service;
 
-import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.NAME_CHANGED_SUCCESSFULLY;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_EXIST;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_INVALID;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_NOT_INSTITUTIONAL;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
 
-import br.edu.utfpr.tsi.xenon.application.dto.InputNameUserDto;
-import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
-import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
-import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
-import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
-import br.edu.utfpr.tsi.xenon.domain.user.service.UserCreatorService;
 import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorEmail;
-import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
+import br.edu.utfpr.tsi.xenon.structure.exception.EmailErrorException;
+import br.edu.utfpr.tsi.xenon.structure.exception.RegistryUserException;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-@Slf4j
-@Service
-@RequiredArgsConstructor
-public class UserServiceApplication implements UserServiceRegistryApplication {
+public interface UserServiceApplication {
 
-    private final UserCreatorService userCreatorService;
-    private final AccessCardRepository accessCardService;
-    private final ValidatorEmail validatorEmail;
-    private final UserRepository userRepository;
-    private final SecurityContextUserService securityContextUserService;
+    ValidatorEmail getValidator();
 
-    @Transactional
-    public UserDto getUserByToken(String authorization) {
-        log.info("Executando recuperação de usuário por token");
-        log.debug("Recuperando usuário dono do token {}", authorization);
-        try {
-            return securityContextUserService.getUserByContextSecurity(authorization)
-                .map(userEntity -> UserFactory.getInstance().buildUserDto(userEntity))
-                .orElse(new UserDto());
-        } catch (Exception exception) {
-            log.debug(exception.getMessage());
-            log.warn(
-                """ 
-                            
-                    +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                    | Contexto de segurança vazio usando o token:                                 |
-                    |==============================================================================
-                                    
-                      {}
-                                    
-                    |==============================================================================
-                    | Requisição de pedido de token sem está autenticado.                         |
-                    +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                            
-                    """, authorization);
-            return new UserDto();
+    UserRepository getUserRepository();
+
+    default void checkIsEmail(String email) {
+        if (FALSE.equals(getValidator().isEmail(email))) {
+            throw new EmailErrorException(email, EMAIL_INVALID.getCode());
         }
     }
 
-    @Transactional
-    public ProcessResultDto changeName(InputNameUserDto input, String authorization) {
-        return securityContextUserService.getUserByContextSecurity(authorization)
-            .map(userEntity -> {
-                checkNameExist(input.getName());
-                userEntity.setName(input.getName());
-
-                userRepository.saveAndFlush(userEntity);
-
-                return new ProcessResultDto().result(NAME_CHANGED_SUCCESSFULLY.getCode());
-            }).orElse(new ProcessResultDto().result(NAME_CHANGED_SUCCESSFULLY.getCode()));
+    default void checkEmailIsInstitutional(String email) {
+        if (FALSE.equals(getValidator().validateEmailStudents(email))) {
+            throw new EmailErrorException(email, EMAIL_NOT_INSTITUTIONAL.getCode());
+        }
     }
 
-//    @Transactional
-//    public UserDto createNewUser(InputUserDto input) {
-//        log.info("Iniciando processo de registro de novo usuário");
-//        log.info("Iniciando processo de registro de novo usuário, {}", input);
-//
-//        checkNameExist(input.getName());
-//        checkIsEmail(input.getEmail());
-//        checkExistEmail(input.getEmail());
-//
-//        if (TypeUserEnum.STUDENTS == input.getTypeUser()) {
-//            checkEmailIsInstitutional(input.getEmail());
-//        }
-//
-//        var pass = CreatorPasswordService.newInstance(bCryptPasswordEncoder).createPass();
-//        var newUser = userCreatorService.createNewUser(input, pass.pass());
-//
-//        notificationNewPassword.sendNewPass(pass.pass(), input.getEmail());
-//        return newUser;
-
-//    }
-//    @Transactional
-//    public UserDto updateUser(Long id, InputUserDto input) {
-//        var user = userRepository.findById(id)
-//            .orElseThrow(
-//                () -> new ResourceNotFoundException("usuário", "userId: {%d}".formatted(id)));
-//
-//        checkNameExist(input.getName());
-//        checkIsEmail(input.getEmail());
-//        checkExistEmail(input.getEmail());
-//
-//        if (TypeUserEnum.STUDENTS == input.getTypeUser()) {
-//            checkEmailIsInstitutional(input.getEmail());
-//        }
-//
-//        user.setTypeUser(input.getTypeUser().name());
-//        user.setName(input.getName());
-//        user.getAccessCard().setUsername(input.getEmail());
-//
-//        userRepository.saveAndFlush(user);
-//        return UserFactory.getInstance().buildUserDto(user);
-    //    }
-
-    @Override
-    public ValidatorEmail getValidator() {
-        return validatorEmail;
+    default void checkExistEmail(String email) {
+        if (TRUE.equals(getValidator().isExistEmail(email))) {
+            throw new EmailErrorException(email, EMAIL_EXIST.getCode());
+        }
     }
 
-    @Override
-    public UserRepository getUserRepository() {
-        return userRepository;
+    default void checkNameExist(String name) {
+        if (TRUE.equals(getUserRepository().existsByName(name))) {
+            throw new RegistryUserException(MessagesMapper.NAME_EXIST.getCode(), 409);
+        }
     }
 }

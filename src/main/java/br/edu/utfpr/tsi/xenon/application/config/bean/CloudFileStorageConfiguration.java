@@ -5,6 +5,7 @@ import static java.lang.Boolean.TRUE;
 import br.edu.utfpr.tsi.xenon.application.config.property.FilesProperty;
 import com.cloudinary.Cloudinary;
 import java.util.Map;
+import org.apache.tika.Tika;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,5 +29,10 @@ public class CloudFileStorageConfiguration {
             "api_secret", property.getSecret(),
             "secure", TRUE
         ));
+    }
+
+    @Bean
+    public Tika tika() {
+        return new Tika();
     }
 }

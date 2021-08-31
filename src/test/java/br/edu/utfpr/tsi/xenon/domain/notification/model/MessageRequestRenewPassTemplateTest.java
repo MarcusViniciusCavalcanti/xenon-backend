@@ -12,8 +12,9 @@ class MessageRequestRenewPassTemplateTest {
     @Test
     @DisplayName("Deve fazer o replace senha no template html ")
     void shouldHaveReplaceTemplateHtml() {
-        var email = Faker.instance().internet().emailAddress();
-        var url = Faker.instance().internet().domainName();
+        var faker = Faker.instance();
+        var email = faker.internet().emailAddress();
+        var url = faker.internet().domainName();
         var template = new MessageRequestRenewPassTemplate(email, url);
 
         assertFalse(template.getTemplate().contains("[---URL_SENHA---]"));

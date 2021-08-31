@@ -600,6 +600,45 @@ paths:
             $ref: '#/components/responses/Unauthorized'
           '500':
             $ref: '#/components/responses/InternalServerError'
+    /profile/avatar:
+      post:
+        summary: Avatar do usuário
+        operationId: includeAvatar
+        tags:
+          - Profile
+        description: |-
+          ### Incluir Avatar
+
+          O usuário poderá adicionar uma imagem que será utilizada em seu perfil é no reconhecimento.
+          O arquivo aceitos será png e jpg (jpeg), e será convertido para png. O arquivo será público.
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          required: true
+          description: Arquivo que será adicionado.
+          content:
+            multipart/form-data:
+              schema:
+                description: Arquivo de imagem que será utilizado no avatar
+                type: object
+                properties:
+                  fileName:
+                    type: string
+                    format: binary
+
+        responses:
+          '200':
+            $ref: '#/components/responses/UserOwnerTokenResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
 
     # User
     /users/all:

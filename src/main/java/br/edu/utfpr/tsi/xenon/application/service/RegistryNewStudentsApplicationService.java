@@ -26,7 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class RegistryNewStudentsApplicationService implements UserServiceRegistryApplication {
+public class RegistryNewStudentsApplicationService implements UserServiceApplication {
 
     private static final String PARAMETERS_URL = "%s/activate-registry?params=%s";
 
@@ -46,7 +46,7 @@ public class RegistryNewStudentsApplicationService implements UserServiceRegistr
         checkEmailIsInstitutional(input.getEmail());
         checkExistEmail(input.getEmail());
 
-        var entity = userCreatorService.registryNewStudent(input);
+        var entity = userCreatorService.createNewStudents(input);
         entity.getAccessCard().setEnabled(FALSE);
         entity.setAuthorisedAccess(FALSE);
         sendWelcomeEmail(input.getEmail(), input.getName());

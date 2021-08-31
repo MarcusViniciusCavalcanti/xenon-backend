@@ -10,7 +10,8 @@ import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.service.CarApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.SecurityApplicationService;
-import br.edu.utfpr.tsi.xenon.application.service.UserServiceApplication;
+import br.edu.utfpr.tsi.xenon.application.service.UserGetterServiceApplication;
+import br.edu.utfpr.tsi.xenon.application.service.UserUpdaterServiceApplication;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @RestController
@@ -28,9 +30,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
 
-    private final UserServiceApplication userServiceApplication;
     private final SecurityApplicationService securityApplicationService;
     private final CarApplicationService carApplicationService;
+    private final UserGetterServiceApplication userGetterServiceApplication;
+    private final UserUpdaterServiceApplication userUpdaterServiceApplication;
 
     private final MessageSource messageSource;
 
@@ -40,7 +43,7 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
         log.info("Recebendo solicitação para todo do token");
         log.debug("Recebendo solicitação para todo do token, token: '[{}]'", authorization);
 
-        var user = userServiceApplication.getUserByToken(authorization);
+        var user = userGetterServiceApplication.getUserByToken(authorization);
         return ResponseEntity.ok(user);
     }
 
@@ -53,7 +56,7 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
         log.info("Recebendo solicitação troca de nome");
         log.debug("Recebendo solicitação troca de nome '[{}]'", authorization);
 
-        var result = userServiceApplication.changeName(inputNameUserDto, authorization);
+        var result = userUpdaterServiceApplication.changeName(inputNameUserDto, authorization);
 
         var locale = getLocale(acceptLanguage);
         var message = getMessage(result.getResult(), locale);
@@ -116,6 +119,13 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
 
         carApplicationService.removeCar(inputRemoveCarDto, authorization);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @PostMapping("/avatar")
+    public ResponseEntity<UserDto> includeAvatar(String authorization, MultipartFile fileName) {
+        var user = userUpdaterServiceApplication.changeAvatar(fileName, authorization);
+        return ResponseEntity.ok(user);
     }
 
     @Override

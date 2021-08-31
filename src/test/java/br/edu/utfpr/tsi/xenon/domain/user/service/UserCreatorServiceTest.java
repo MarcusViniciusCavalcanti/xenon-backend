@@ -2,10 +2,11 @@ package br.edu.utfpr.tsi.xenon.domain.user.service;
 
 import static br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser.STUDENTS;
 import static java.lang.Boolean.TRUE;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
@@ -20,14 +21,11 @@ import br.edu.utfpr.tsi.xenon.domain.user.aggregator.RolesAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
-import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import com.github.javafaker.Faker;
 import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.provider.Arguments;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -36,9 +34,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - UserService")
 class UserCreatorServiceTest {
-
-    @Mock
-    private UserRepository userRepository;
 
     @Mock
     private AccessCardAggregator accessCardAggregator;
@@ -87,7 +82,7 @@ class UserCreatorServiceTest {
             .when(avatarAggregator)
             .includeDefaultAvatarUrl(any(UserEntity.class));
 
-        var userCreated = userCreatorService.registryNewStudent(input);
+        var userCreated = userCreatorService.createNewStudents(input);
 
         assertNotNull(userCreated);
 
@@ -129,7 +124,8 @@ class UserCreatorServiceTest {
                 eq(input.getEmail()),
                 eq("pass"),
                 eq("pass"));
-        doNothing()
+        lenient()
+            .doNothing()
             .when(carsAggregator)
             .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
         doNothing()
@@ -139,44 +135,16 @@ class UserCreatorServiceTest {
             .when(avatarAggregator)
             .includeDefaultAvatarUrl(any(UserEntity.class));
 
+        userCreatorService.createNewUser(input, "pass");
 
-    }
-
-//    @Test
-//    @DisplayName("Deve lançar exception quando recurso não existe")
-//    void shouldThrowsExceptionWhenUserNotFound() {
-//        var id = 1L;
-//        when(userRepository.findById(id)).thenReturn(Optional.empty());
-//
-//        var exception = assertThrows(ResourceNotFoundException.class, () -> userCreatorService.findById(id));
-//
-//        assertEquals("usuário", exception.getResourceName());
-//        assertEquals("userId: 1", exception.getArgumentSearch());
-//    }
-
-    private static Stream<Arguments> providerArgsToCreateUser() {
-        var faker = Faker.instance();
-        var inputTypeStudents = new InputUserDto()
-            .email(faker.internet().emailAddress())
-            .name(faker.name().fullName())
-            .typeUser(TypeUserEnum.STUDENTS)
-            .modelCar(faker.rockBand().name())
-            .plateCar(faker.bothify("???-#?##", TRUE))
-            .addRolesItem(1L)
-            .enabled(TRUE)
-            .authorisedAccess(TRUE);
-
-        var inputTypeService = new InputUserDto()
-            .email(faker.internet().emailAddress())
-            .name(faker.name().fullName())
-            .typeUser(TypeUserEnum.SERVICE)
-            .modelCar(faker.rockBand().name())
-            .plateCar(faker.bothify("???-#?##", TRUE))
-            .addRolesItem(1L)
-            .enabled(TRUE)
-            .authorisedAccess(TRUE);
-
-        return null;
+        verify(accessCardAggregator).includeAccessCard(
+            any(UserEntity.class),
+            eq(input.getEmail()),
+            eq("pass"),
+            eq("pass"));
+        verify(carsAggregator)
+            .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
+        verify(rolesAggregator).includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
     }
 
     private UserEntity getUserEntity() {
