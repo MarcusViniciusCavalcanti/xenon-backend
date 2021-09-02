@@ -1,4 +1,7 @@
 # custom configuration application
+application:
+  version: @project.version@
+
 xenon:
   configurations:
     datasource:
@@ -42,12 +45,16 @@ server:
 spring:
   redis:
     timeout: 0
+  cache:
+    type: redis
   data:
     redis:
       repositories:
         enabled: false
   jackson:
     default-property-inclusion: non_null
+    serialization:
+      WRITE_DATES_AS_TIMESTAMPS: false
   servlet:
     multipart:
       enabled: true
@@ -68,8 +75,8 @@ spring:
       validation-timeout: 300000
       connection-test-query: SELECT 1
   jpa:
-    show-sql: true
-    generate-ddl: true
+    show-sql: false
+    generate-ddl: false
     hibernate:
       ddl-auto: update
   mail:
@@ -86,6 +93,7 @@ spring:
           starttls:
             enable: ${xenon.configurations.email.tls.enable}
             required: ${xenon.configurations.email.tls.required}
+
 
 # docs swagger configurations
 springdoc:

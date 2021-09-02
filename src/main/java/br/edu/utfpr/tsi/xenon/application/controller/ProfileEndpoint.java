@@ -9,6 +9,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputRemoveCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.service.CarApplicationService;
+import br.edu.utfpr.tsi.xenon.application.service.UserDeleterApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.SecurityApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.UserGetterServiceApplication;
 import br.edu.utfpr.tsi.xenon.application.service.UserUpdaterServiceApplication;
@@ -34,6 +35,7 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
     private final CarApplicationService carApplicationService;
     private final UserGetterServiceApplication userGetterServiceApplication;
     private final UserUpdaterServiceApplication userUpdaterServiceApplication;
+    private final UserDeleterApplicationService userDeleterApplicationService;
 
     private final MessageSource messageSource;
 
@@ -90,7 +92,7 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
         log.info("Recebendo solicitação desativação de conta");
         log.debug("Recebendo solicitação desativação de conta '[{}]'", authorization);
 
-        securityApplicationService.disableAccount(authorization, "Usuário desativou a conta.");
+        userDeleterApplicationService.disableAccount(authorization, "Usuário desativou a conta.");
         return ResponseEntity.noContent().build();
     }
 

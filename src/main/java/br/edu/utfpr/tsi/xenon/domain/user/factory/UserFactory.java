@@ -67,7 +67,10 @@ public interface UserFactory {
             .name(entity.getName())
             .email(entity.getAccessCard().getUsername())
             .avatar(entity.getAvatar())
-            .type(TypeEnum.fromValue(entity.getTypeUser()));
+            .type(TypeEnum.fromValue(entity.getTypeUser()))
+            .authorisedAccess(entity.getAuthorisedAccess())
+            .enabled(entity.getAccessCard().isEnabled())
+            .disableReason(entity.getDisableReason());
 
         entity.getAccessCard().getRoleEntities().stream()
             .map(role -> new RoleDto()

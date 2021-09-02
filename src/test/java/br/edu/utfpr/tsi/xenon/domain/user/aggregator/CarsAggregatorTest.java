@@ -107,7 +107,7 @@ class CarsAggregatorTest {
         carsAggregator.includeNewCar(user, "Model car", actual);
 
         assertFalse(user.getCar().isEmpty());
-        assertEquals(expected, user.getCar().get(0).getPlate());
+        assertEquals(expected, user.getCar().stream().toList().get(0).getPlate());
     }
 
     @Test

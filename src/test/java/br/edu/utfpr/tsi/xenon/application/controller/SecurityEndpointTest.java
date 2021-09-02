@@ -3,7 +3,6 @@ package br.edu.utfpr.tsi.xenon.application.controller;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.mapper.ObjectMapperType.JACKSON_2;
-import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
@@ -26,11 +25,7 @@ import java.util.List;
 import java.util.Locale;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.parallel.ResourceAccessMode;
-import org.junit.jupiter.api.parallel.ResourceLock;
-import org.junit.jupiter.api.parallel.ResourceLocks;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @DisplayName("Test - Integration - Funcionalidade login")
@@ -120,13 +115,6 @@ class SecurityEndpointTest extends AbstractContextTest {
 
     @Test
     @DisplayName("Deve logar com sucesso")
-    @ResourceLocks(value = {
-        @ResourceLock(
-            mode = ResourceAccessMode.READ,
-            value = "br.edu.utfpr.tsi.xenon.structure.repository.RoleRepository"),
-        @ResourceLock(
-            value = "br.edu.utfpr.tsi.xenon.structure.repository.UserRepository"),
-    })
     void shouldHaveLoginSuccess() {
         var locale = Locale.forLanguageTag("pt_BR");
         var email = faker.internet().emailAddress();
@@ -191,7 +179,8 @@ class SecurityEndpointTest extends AbstractContextTest {
             .email(faker.internet().emailAddress());
 
         given()
-            .queryParam("params", "ZW1haWxfbmV3X3Bhc3N3b3JkQGVtYWlsLmNvbS1zYXVsdDo4Mjk3ZWVmYS1kMGZhLTRkMjYtYTUwNi1iMGU1YzBiYjk3OTQ=")
+            .queryParam("params",
+                "ZW1haWxfbmV3X3Bhc3N3b3JkQGVtYWlsLmNvbS1zYXVsdDo4Mjk3ZWVmYS1kMGZhLTRkMjYtYTUwNi1iMGU1YzBiYjk3OTQ=")
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
             .header("Accept-Language", locale.getLanguage())

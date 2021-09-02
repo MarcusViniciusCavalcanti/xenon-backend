@@ -13,13 +13,13 @@ public class SecurityProperty {
     private Header header = new Header();
 
     public LocalDateTime expirationTimeDate() {
-        return LocalDateTime.now().plusMinutes(token.expiration * 1000L);
+        return LocalDateTime.now().plusMinutes(token.expiration);
     }
 
     @Data
     public static class TokenConfiguration {
 
-        private int expiration = 3600;
+        private int expiration = 24;
         private String secretKey = "qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr";
     }
 

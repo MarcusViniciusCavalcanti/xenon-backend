@@ -77,19 +77,4 @@ class SecurityApplicationServiceTest {
         assertThrows(ResourceNotFoundException.class,
             () -> service.changePass(new InputChangePasswordDto(), "token"));
     }
-
-    @Test
-    @DisplayName("Deve desativar conta do usuário com sucesso")
-    void shouldHaveDisableAccountUser() {
-        var user = new UserEntity();
-        var accessCard = new AccessCardEntity();
-        user.setAccessCard(accessCard);
-        when(securityContextUserService.getUserByContextSecurity(any())).thenReturn(Optional.of(user));
-        when(userRepository.saveAndFlush(user)).thenReturn(new UserEntity());
-
-        service.disableAccount("token", "reason");
-
-        verify(securityContextUserService).getUserByContextSecurity(any());
-        verify(userRepository).saveAndFlush(user);
-    }
 }

@@ -9,7 +9,8 @@ import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
@@ -23,11 +24,22 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputNewCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRemoveCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto.TypeEnum;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
+import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.Uploader;
 import com.github.javafaker.Faker;
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
+import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 
 @DisplayName("Test - Integration - Funcionalidade de Perfil de usuário")
@@ -39,6 +51,13 @@ class ProfileEndpointTest extends AbstractSecurityContext {
     private static final String URL_REMOVE_CAR = "/api/profile/remove-car";
     private static final String URL_CHANGE_PASSWORD = "/api/profile/change-password";
     private static final String URL_DISABLE_ACCOUNT = "/api/profile/disable-account";
+    private static final String URL_INCLUDE_AVATAR = "/api/profile/avatar";
+
+    @Autowired
+    private CarRepository carRepository;
+
+    @MockBean
+    private Cloudinary cloudinary;
 
     @Test
     @DisplayName("Deve retornar usuário do contexto de segurança 'dono do token'")
@@ -99,6 +118,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .when()
             .patch(URL_CHANGE_NAME);
 
+        //noinspection OptionalGetWithoutIsPresent
         var userUpdated = userRepository.findById(user.getId()).get();
         assertEquals(inputChangeName.getName(), userUpdated.getName());
 
@@ -243,6 +263,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
 
     @Test
     @DisplayName("Deve desativar conta com sucesso")
+    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.CarRepository")
     void shouldHaveDisableAccount() {
         var user = createDriver();
         var input = new InputLoginDto()
@@ -260,6 +281,43 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .statusCode(NO_CONTENT.value())
             .when()
             .delete(URL_DISABLE_ACCOUNT);
+
+        var cars = carRepository.findByUser(user);
+        assertTrue(cars.isEmpty());
+
+        deleteUser(user);
+    }
+
+    @Test
+    @DisplayName("Deve incluir avatar com sucesso")
+    void shouldHaveIncludeUserSuccessFully() throws URISyntaxException, IOException {
+        var file = Paths.get(Objects
+            .requireNonNull(
+                this.getClass().getResource("/test-file/extention-test/valid/file-png.png"))
+            .toURI());
+
+        var user = createDriver();
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        var uploader = Mockito.mock(Uploader.class);
+        Mockito.when(cloudinary.uploader()).thenReturn(uploader);
+        Mockito.when(uploader.upload(Mockito.any(), Mockito.any()))
+            .thenReturn(Map.of("url", "url"));
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .multiPart(file.toFile())
+            .expect()
+            .statusCode(OK.value())
+            .body("avatar", is("url"))
+            .when()
+            .post(URL_INCLUDE_AVATAR);
+
+        Mockito.verify(uploader).upload(Mockito.any(), Mockito.any());
 
         deleteUser(user);
     }

@@ -7,6 +7,8 @@ junit:
 spring:
   redis:
     timeout: 0
+  cache:
+    type: none
   data:
     redis:
       repositories:

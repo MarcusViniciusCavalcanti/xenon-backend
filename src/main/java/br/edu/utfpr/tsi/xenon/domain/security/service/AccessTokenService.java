@@ -4,6 +4,7 @@ import br.edu.utfpr.tsi.xenon.application.config.property.SecurityProperty;
 import br.edu.utfpr.tsi.xenon.application.dto.TokenDataDto;
 import br.edu.utfpr.tsi.xenon.application.dto.TokenDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -35,7 +36,7 @@ public class AccessTokenService {
             .setSubject(email)
             .setExpiration(Date.from(now))
             .signWith(SignatureAlgorithm.HS512, securityProperty.getToken().getSecretKey())
-            .claim("roles", accessCardEntity.getRoleEntities())
+            .claim("user", UserFactory.getInstance().buildUserDto(accessCardEntity.getUser()))
             .compact();
 
         return new TokenDto()

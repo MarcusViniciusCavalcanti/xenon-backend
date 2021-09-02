@@ -13,6 +13,7 @@ import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -31,6 +32,7 @@ public class UserCreatorServiceApplication implements UserServiceApplication {
     private final SenderAdapter senderAdapter;
 
     @Transactional
+    @CacheEvict(cacheNames = {"User", "UserPage"}, allEntries = true)
     public UserDto createNewUser(InputUserDto input) {
         log.info("Iniciando processo de registro de novo usuário");
         log.info("Iniciando processo de registro de novo usuário, {}", input);

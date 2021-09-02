@@ -11,6 +11,8 @@ services:
       POSTGRES_PASSWORD: xenon
       POSTGRES_USER: xenon
       POSTGRES_DB: xenon
+    volumes:
+    - ./config/database:/var/lib/postgresql/data
   redis:
     container_name: xenon_redis
     image: library/redis:alpine

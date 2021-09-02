@@ -673,15 +673,63 @@ paths:
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
           - in: query
-            description: Filtro da solicitação, este filtro auxilia para uma busca mais customizada.
-            name: params
+            name: size
+            description: |-
+              Quantidade de elementos exibidos por página, padrão 5 valor máximo 100, será retornado erro 400
             schema:
-              $ref: '#/components/schemas/ParamsQuerySearchUser'
-            style: form
-            explode: true
+              maximum: 100
+              default: 5
+              type: integer
+          - in: query
+            name: page
+            description: número da página, lista inicia por 0, ou seja 0 retornara a primeira página
+            schema:
+              type: integer
+              default: 0
+          - in: query
+            name: sorted
+            description: |-
+              Valor padrão será `created` (data de criação), porém se informado e não corresponder a lista abaixo
+              o valor `created`  será utilizado.
+
+              propriedade que se deseja orderna, valores disponívels:
+              * name
+              * type
+              * email
+              * created
+            schema:
+              type: string
+              default: name
+          - in: query
+            name: direction
+            description: direção da ordenação
+            schema:
+              type: string
+              default: desc
+          - in: query
+            name: nameOrEmail
+            description: filtra os elementos por nome ou e-mail
+            schema:
+              type: string
+          - in: query
+            name: type
+            description: |-
+              filtra os elementos por tipo de usuário.
+
+              Valores disponíveis:
+              * SERVICE
+              * STUDENTS
+              * SPEAKER
+
+              Caso preenchendo e o valor informado não corresponder ao dado anteriormente
+              o será utilizado como padrão ``SERVICE``.
+            schema:
+              type: string
         responses:
           '200':
             $ref: '#/components/responses/UserPageResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
           '401':
             $ref: '#/components/responses/Unauthorized'
           '403':
@@ -862,6 +910,13 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
         requestBody:
           description: Corpo da chamada para desativar a conta do usuário
           required: true
@@ -907,6 +962,13 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
         requestBody:
           description: Corpo da chamada para remover autorização de acesso do usuário
           required: true
@@ -929,7 +991,7 @@ paths:
             $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
-    /users/enabled/access:
+    /users/enabled/access/:
       patch:
         summary: Autoriza acesso do usuário.
         tags:
@@ -951,6 +1013,13 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
         requestBody:
           description: Corpo da chamada para autorizar o acesso do usuário
           required: true
@@ -1060,6 +1129,20 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Role'
+        authorisedAccess:
+          type: boolean
+          description: define se usuário tem acesso ao estacionamento, liberado
+          example: true
+        enabled:
+          type: boolean
+          description: define se a conta do usuário esta ativa ou não
+          example: true
+        disableReason:
+          type: string
+          description: |-
+            Caso a conta do usuário está desativa, este campo será preenchido com o motivo da desativação
+            da conta.
+          example: Usuário cancelou a conta.
     Car:
       type: object
       properties:
@@ -1109,14 +1192,16 @@ components:
           type: string
           example: asc
           description: direção da ordenação Ascendente ou Descendente
-        totalElementos:
+        totalElements:
           type: integer
-          description: total de elementos encontrados
+          format: int64
+          description: total de elementos encontrados.
           example: 500
         totalPage:
           type: integer
           description: total de páginas possíveis, com base no tamanho de elementos na página e o total de elementos.
           example: 10
+
     PageUser:
       allOf:
         - $ref: '#/components/schemas/PageBase'
@@ -1347,6 +1432,10 @@ components:
           type: boolean
           description: define o acesso do usuário ao estacionamento
           example: true
+        disableReason:
+          type: string
+          description: Motivo para desativar conta do usuário
+          example: Usuário não faz parte da instituição.
     InputAccessUser:
       type: object
       required:
@@ -1364,27 +1453,7 @@ components:
           example: motivo da ação que originou.
 
 
-    # Params
-    ParamsQuerySearchUser:
-      example: >-
-        users/all?size=5&page=0&sorted=name&direction=asc
-      properties:
-        size:
-          type: integer
-        page:
-          type: integer
-        sorted:
-          enum:
-            - name
-            - email
-            - type
-        direction:
-          enum:
-            - asc
-            - desc
-
-
-    # Errors
+            # Errors
     ErrorBase:
       type: object
       properties:

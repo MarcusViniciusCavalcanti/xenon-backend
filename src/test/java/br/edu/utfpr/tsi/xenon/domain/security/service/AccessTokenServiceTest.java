@@ -1,16 +1,26 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
+import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.config.property.SecurityProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -40,8 +50,17 @@ class AccessTokenServiceTest {
     @Test
     @DisplayName("Deve criar um token")
     void shouldHaveCreateToken() {
+        var faker = Faker.instance();
         var accessCard = new AccessCardEntity();
         var role = new RoleEntity();
+        var user = new UserEntity();
+
+        user.setId(1L);
+        user.setName(faker.name().fullName());
+        user.setTypeUser(TypeUser.SPEAKER.name());
+        user.setAvatar(faker.internet().avatar());
+        user.setAuthorisedAccess(TRUE);
+
         role.setId(1L);
         role.setName("roler_name");
         role.setDescription("description role");
@@ -51,8 +70,10 @@ class AccessTokenServiceTest {
         when(securityProperty.getToken()).thenReturn(tokenConfiguration);
         when(tokenConfiguration.getSecretKey()).thenReturn("secrete");
 
-        accessCard.setUsername(Faker.instance().internet().emailAddress());
+        accessCard.setUsername(faker.internet().emailAddress());
         accessCard.setRoleEntities(List.of(role));
+        accessCard.setUser(user);
+        user.setAccessCard(accessCard);
 
         var token = accessTokenService.create(accessCard);
 
@@ -64,15 +85,26 @@ class AccessTokenServiceTest {
 
         assertEquals("""
             {"alg":"HS512"}""", partOne);
-        assertEquals("""
-                {"sub":"%s","exp":%s,"roles":[{"id":%d,"name":"%s","description":"%s"}]}"""
-                .formatted(
-                    accessCard.getUsername(),
-                    expirationTime.toInstant(ZoneOffset.UTC).toEpochMilli() / 1000L,
-                    role.getId(),
-                    role.getName(),
-                    role.getDescription()),
-            partTwo);
+
+        try {
+            var objectMapper = new ObjectMapper();
+            var nodes = objectMapper.readTree(partTwo);
+            var userNode = nodes.get("user");
+
+            assertEquals(user.getTypeUser(), userNode.get("type").textValue());
+            assertEquals(user.getAvatar(), userNode.get("avatar").textValue());
+            assertEquals(user.getId(), userNode.get("id").intValue());
+            assertEquals(user.getName(), userNode.get("name").textValue());
+            assertEquals(user.getAuthorisedAccess(), userNode.get("authorisedAccess").booleanValue());
+            assertEquals(user.getAccessCard().isEnabled(), userNode.get("enabled").booleanValue());
+            assertEquals(user.getAccessCard().getUsername(), userNode.get("email").textValue());
+
+            assertNull(nodes.get("disableReason"));
+            assertNull(nodes.get("cars"));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
+
     }
 
     @Test
@@ -146,6 +178,7 @@ class AccessTokenServiceTest {
         when(securityProperty.getToken()).thenReturn(tokenConfiguration);
         when(tokenConfiguration.getSecretKey()).thenReturn(security);
 
+        //noinspection OptionalGetWithoutIsPresent
         var result = accessTokenService.getEmail(token).get();
         assertEquals(email, result);
     }

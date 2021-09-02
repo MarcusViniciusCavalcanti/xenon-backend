@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.MessageSource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -47,7 +48,7 @@ class DefaultHandlerErrorTest {
 
         when(exception.getFieldErrors()).thenReturn(List.of(fieldError));
         when(request.getServletPath()).thenReturn("path");
-        when(request.getHeader("accept-language")).thenReturn("pt-BR");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
         when(messageSource
             .getMessage(eq(ARGUMENT_INVALID.getCode()), any(String[].class), any(Locale.class)))
             .thenReturn("message");
@@ -71,7 +72,7 @@ class DefaultHandlerErrorTest {
         var exception = new ResourceNotFoundException("resourceName", "argument");
 
         when(request.getServletPath()).thenReturn("path");
-        when(request.getHeader("accept-language")).thenReturn("pt-BR");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
 
         when(messageSource.getMessage(
             eq(RESOURCE_NOT_FOUND.getCode()),
@@ -94,7 +95,7 @@ class DefaultHandlerErrorTest {
         var exception = new BusinessException(400, KNOWN.getCode());
 
         when(request.getServletPath()).thenReturn("path");
-        when(request.getHeader("accept-language")).thenReturn("pt-BR");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
         when(messageSource.getMessage(
             eq(KNOWN.getCode()),
             any(String[].class),

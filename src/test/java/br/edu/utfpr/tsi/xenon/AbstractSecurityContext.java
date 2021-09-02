@@ -32,7 +32,7 @@ public abstract class AbstractSecurityContext extends AbstractContextTest {
     protected String token;
 
     @Autowired
-    private RoleRepository roleRepository;
+    protected RoleRepository roleRepository;
 
     @Autowired
     protected UserRepository userRepository;
@@ -48,7 +48,7 @@ public abstract class AbstractSecurityContext extends AbstractContextTest {
     }
 
     protected UserEntity createOperator() {
-        return getInputLoginDto(List.of(1L, 2L));
+        return getInputLoginDto(List.of(1L, 3L));
     }
 
     protected UserEntity createDriver() {
@@ -98,6 +98,7 @@ public abstract class AbstractSecurityContext extends AbstractContextTest {
         car.setPlate(faker.bothify("???-####", TRUE));
         car.setModel("Gol 1.0");
         user.getCar().add(car);
+        car.setUser(user);
 
         return userRepository.saveAndFlush(user);
     }

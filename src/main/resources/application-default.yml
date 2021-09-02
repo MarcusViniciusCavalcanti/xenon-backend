@@ -27,3 +27,8 @@ xenon:
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
       domain: http://localhost:8080/api
+
+spring:
+  jpa:
+    show-sql: true
+    generate-ddl: true
