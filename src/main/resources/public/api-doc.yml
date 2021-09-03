@@ -4,7 +4,7 @@ info:
   title: Xenon API
   description: |-
     Para obter mais informações sobre o desenvolvimento
-    acessar o [github](<adicionar repositorio github>).
+    acessar o [github](https://github.com/MarcusViniciusCavalcanti/xenon-backend).
 
 
     ## Overview
@@ -196,6 +196,33 @@ tags:
 
       Cada papel do usuário, lhe concede certas autorizações para manipular os recursos do sistema. Observe cada
       uri do recursos para observar qual papel é necessário para manipular o recurso, na sessão regras da solicitação.
+  - name: Workstation
+    x-displayName: Estações de trabalho
+    description: |-
+      Recurso Workstation represetna uma abstração de uma estação de trabalho, portões, monitoramento, são exemplos,
+      da qual um dispositivo de reconhecimento está vinculada.
+
+      Cada workstation tem apenas um único dispositivo, que fará comunicação via protocolo __Http__ podendo então, receber os reconhecimentos
+      das placas, enviar comando para abrir cancelas, caso o dispositivo tenha a comunicação com a cancela ativada.
+
+      As workstations contém 3 (três) atributos que para sua criação na Api são obrigatórios:
+      * `name` Nome da estação;
+      * `ip` ip do dispositivo que a estação está vinculada; e
+      * `modo` modo de operação.
+
+
+      Uma vez o Xenon receber um reconhecimento enviará para estação vinculada, é verificará as configurações dos modos de operação
+      que por sua vez, definem como a estão enviaram os comandos de abertura de cancela, para o dispositivo de reconhecimento.
+      Os modos disponiveis são:
+      * __MANUAL__ (manual) neste requer ação do usuário enviar um comando para API notificar o dispositivo para abertura da cancela
+      * __AUTOMATIC__ (automático) neste modo a api enviará um comando o dispositivo de abertura de cancela,
+      sempre que um reconhecimento for validado com sucesso, isto quer dizer:
+        * reconhecimento com taxa de confiabilidade no reconhecimento maior que 75%;
+        * usuário cadastrado no sistema;
+        * usuário tem acesso.
+      * __NONE__ (destivado) neste modo o Xeno apenas enviaram a notificação de um reconhecimento.
+
+      Importante resultar que apenas será autorizado requisições de reconhecimento de dispositivos vinculados a uma estação de trabalho.
 paths:
     # security
     /login/:
@@ -743,7 +770,7 @@ paths:
           ### Solicitação para receber um recurso usuário.
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
 
           Com base no id informado no path da requisição, um recurso usuário será retornado.
@@ -789,7 +816,7 @@ paths:
           ### Solicitação para criar um recurso usuário.
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
 
           Criará um recurso usuário que representa uma abstração de uma pessoa que utiliza o sistema
@@ -823,6 +850,8 @@ paths:
             $ref: '#/components/responses/Forbidden'
           '404':
             $ref: '#/components/responses/NotFound'
+          '409':
+            $ref: '#/components/responses/Conflict'
           '422':
             $ref: '#/components/responses/UnprocessableEntity'
           '500':
@@ -833,7 +862,7 @@ paths:
           ### Solicitação para atualizar um recurso usuário.
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           O administrador poderá atualizar quase todos os dados do usuário, apenas a lista dos carros
@@ -874,6 +903,8 @@ paths:
             $ref: '#/components/responses/Forbidden'
           '404':
             $ref: '#/components/responses/NotFound'
+          '409':
+            $ref: '#/components/responses/Conflict'
           '422':
             $ref: '#/components/responses/UnprocessableEntity'
           '500':
@@ -884,7 +915,7 @@ paths:
           ### Solicitação para desativar conta do usuário
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Uma conta desativa implica que o usuário perdera o acesso ao sistema, não só como também, será
@@ -949,7 +980,7 @@ paths:
           ### Solicitação para remover autorização do usuário
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Uma usuário sem autorização de acesso implica que o usuário terá seu acesso ao estacionamento
@@ -1001,7 +1032,7 @@ paths:
           ### Solicitação para autorizar acesso do usuário
 
           Regras para solicitação:
-          * Ser com cliente autenticado
+          * Ser com usuário autenticado
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Adiciona autorização de acesso para o usuário.
@@ -1043,7 +1074,177 @@ paths:
           '500':
             $ref: '#/components/responses/InternalServerError'
 
+    # workstation
+    /workstations/:
+      get:
+        summary: Retonar uma lista de todas as estações de trabalho cadastradas.
+        description: |-
+          ### Solicitação para recuperar todas as estações de trabalho registradas.
 
+          Regras para solicitação:
+          * Ser um usuário autenticado;
+          * Ser autorizado com papel de __operador__ [ROLE_OPERATOR]
+
+          Retornara todas as estações de trabalho cadastrada no Xenon.
+        operationId: getAll
+        tags:
+          - Workstation
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        responses:
+          '200':
+            $ref: '#/components/responses/WorkstationsAllResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      post:
+        summary: Cria um recurso Workstation
+        description: |-
+          ### Solicitação para criar uma estação de trabalho.
+
+          Regras para solicitação:
+          * Ser um usuário autenticado;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara a estações de trabalho criada Xenon.
+        operationId: createStation
+        tags:
+          - Workstation
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+        requestBody:
+          required: true
+          description: Corpo da chamada para criar uma estação de trabalho.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputWorkstation'
+        responses:
+          '201':
+            $ref: '#/components/responses/WorkstationCreatedResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '409':
+            $ref: '#/components/responses/Conflict'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      put:
+        summary: Atualiza os dados de um recurso Workstation
+        description: |-
+          ### Solicitação para atualizar uma estação de trabalho.
+
+          Regras para solicitação:
+          * Ser um usuário autenticado;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara a estações de trabalho atualizada Xenon.
+        operationId: updateStation
+        tags:
+          - Workstation
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: path
+            name: id
+            schema:
+              description: identificador da estação da qual será autualizada.
+              type: integer
+              format: int64
+              example: 1
+        requestBody:
+          required: true
+          description: Corpo da chamada para autualizar uma estação de trabalho.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputWorkstation'
+        responses:
+          '200':
+            $ref: '#/components/responses/WorkstationUpdatedResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '409':
+            $ref: '#/components/responses/Conflict'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+      delete:
+        summary: Remove um recurso Workstation
+        description: |-
+          ### Solicitação para remover uma estação de trabalho.
+
+          Regras para solicitação:
+          * Ser um usuário autenticado;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Esta solicitação não retorna corpo, esta solicitação removera uma estação de trabalho, porém
+          os dados de reconhecimentos serão mantidos.
+        operationId: deleteStation
+        tags:
+          - Workstation
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: path
+            name: id
+            schema:
+              description: identificador da estação, da qual será removida
+              type: integer
+              format: int64
+              example: 1
+        responses:
+          '204':
+            description: Estação de trabalho removida com sucesso.
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '422':
+            $ref: '#/components/responses/UnprocessableEntity'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
 
 
 components:
@@ -1201,7 +1402,6 @@ components:
           type: integer
           description: total de páginas possíveis, com base no tamanho de elementos na página e o total de elementos.
           example: 10
-
     PageUser:
       allOf:
         - $ref: '#/components/schemas/PageBase'
@@ -1210,8 +1410,37 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/User'
+    Workstation:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: identificar
+          example: 1
+        name:
+          type: string
+          description: Nome da estação de trabalha
+          example: Portão 01
+        ip:
+          type: string
+          description: Ip do dispositivo a qual a estação de trabalho está vinculada
+          example: 00:00:00:00
+        mode:
+          type: string
+          enum:
+            - MANUAL
+            - AUTOMATIC
+            - NONE
+          description: Modo de operação da estação de trabalho.
+          example: AUTOMATIC
+        port:
+          type: integer
+          description: porta para acesso do dispositivo
+          example: 9090
 
-    #Inputs
+
+      #Inputs
     InputLogin:
       type: object
       required:
@@ -1451,9 +1680,39 @@ components:
           type: string
           description: motivo da ação
           example: motivo da ação que originou.
+    InputWorkstation:
+      type: object
+      required:
+        - name
+        - mode
+        - ip
+        - port
+      properties:
+        ip:
+          type: string
+          pattern: ((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))
+          description: ip que será vinculado ao dispositivo, IPV6 está disponível.
+          example: 192.168.1.1
+        port:
+          type: integer
+          description: porta de acesso do dispostivo.
+          example: 9090
+        name:
+          type: string
+          description: Nome da estação de trabalho
+          maximum: 50
+          minimum: 5
+          example: Portão 01
+        mode:
+          type: string
+          enum:
+            - NONE
+            - AUTOMATIC
+            - MANUAL
+          description: Modo de operação da estação de trabalho.
+          example: MANUAL
 
-
-            # Errors
+    # erros
     ErrorBase:
       type: object
       properties:
@@ -1578,6 +1837,27 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/User'
+    WorkstationsAllResponse:
+      description: Lista de todas estações de trabalho
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/Workstation'
+    WorkstationCreatedResponse:
+      description: Estação de trabalho criada com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Workstation'
+    WorkstationUpdatedResponse:
+      description: Estacão de trabalho atualizada com sucesso
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Workstation'
+
 
     # errors
     BadRequest:

@@ -21,13 +21,13 @@ import org.springframework.mail.javamail.JavaMailSender;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Test - Unidade - SenderAdapter")
-class SenderAdapterTest {
+class SenderEmailServiceTest {
 
     @Mock
     private JavaMailSender javaMailSender;
 
     @InjectMocks
-    private SenderAdapter senderAdapter;
+    private SenderEmailService senderEmailService;
 
     @Test
     @DisplayName("Deve enviar email")
@@ -39,7 +39,7 @@ class SenderAdapterTest {
             .send(mineMessage);
 
         var template = new TemplateEmail();
-        senderAdapter.sendEmail(template);
+        senderEmailService.sendEmail(template);
 
         verify(javaMailSender).send(mineMessage);
     }
@@ -56,7 +56,7 @@ class SenderAdapterTest {
         when(javaMailSender.createMimeMessage()).thenReturn(mineMessage);
 
         var template = new TemplateEmail();
-        assertDoesNotThrow(() -> senderAdapter.sendEmail(template));
+        assertDoesNotThrow(() -> senderEmailService.sendEmail(template));
     }
 
     public static class TemplateEmail implements EmailTemplate {

@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.EmailTemplate;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
@@ -29,7 +29,6 @@ import com.github.javafaker.Faker;
 import java.util.List;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -56,7 +55,7 @@ class UserCreatorServiceApplicationTest {
     private UserCreatorService userCreatorService;
 
     @Mock
-    private SenderAdapter senderAdapter;
+    private SenderEmailService senderEmailService;
 
     @InjectMocks
     private UserCreatorServiceApplication userCreatorServiceApplication;
@@ -83,7 +82,7 @@ class UserCreatorServiceApplicationTest {
         when(userCreatorService.createNewUser(eq(input), anyString())).thenReturn(user);
         when(userRepository.saveAndFlush(user)).thenReturn(user);
         doNothing()
-            .when(senderAdapter)
+            .when(senderEmailService)
             .sendEmail(any(EmailTemplate.class));
 
         userCreatorServiceApplication.createNewUser(input);
@@ -98,7 +97,7 @@ class UserCreatorServiceApplicationTest {
 
         verify(validatorEmail).isExistEmail(input.getEmail());
         verify(userCreatorService).createNewUser(eq(input), anyString());
-        verify(senderAdapter, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
+        verify(senderEmailService, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
             .sendEmail(any(EmailTemplate.class));
         verify(userRepository).saveAndFlush(user);
     }

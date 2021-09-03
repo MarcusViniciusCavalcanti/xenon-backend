@@ -4,7 +4,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto.TypeUserEnum;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageWelcomeTemplate;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.security.service.CreatorPasswordService;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
 import br.edu.utfpr.tsi.xenon.domain.user.service.UserCreatorService;
@@ -29,7 +29,7 @@ public class UserCreatorServiceApplication implements UserServiceApplication {
     private final UserRepository userRepository;
 
     private final BCryptPasswordEncoder cryptPasswordEncoder;
-    private final SenderAdapter senderAdapter;
+    private final SenderEmailService senderEmailService;
 
     @Transactional
     @CacheEvict(cacheNames = {"User", "UserPage"}, allEntries = true)
@@ -69,7 +69,7 @@ public class UserCreatorServiceApplication implements UserServiceApplication {
     public void sendWelcome(String email, String name, String pass) {
         CompletableFuture.runAsync(() -> {
             var template = new MessageWelcomeTemplate(email, name, pass);
-            senderAdapter.sendEmail(template);
+            senderEmailService.sendEmail(template);
         });
     }
 

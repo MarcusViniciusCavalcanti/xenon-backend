@@ -13,7 +13,7 @@ import static org.mockito.Mockito.when;
 import br.edu.utfpr.tsi.xenon.application.config.property.ApplicationDomainProperty;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.EmailTemplate;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
@@ -48,7 +48,7 @@ class RegistryNewStudentsApplicationServiceTest {
     private UserCreatorService userCreatorService;
 
     @Mock
-    private SenderAdapter senderAdapter;
+    private SenderEmailService senderEmailService;
 
     @Mock
     private ApplicationDomainProperty applicationDomainProperty;
@@ -82,7 +82,7 @@ class RegistryNewStudentsApplicationServiceTest {
         when(userCreatorService.createNewStudents(input)).thenReturn(user);
         when(applicationDomainProperty.getDomain()).thenReturn("domain");
         doNothing()
-            .when(senderAdapter)
+            .when(senderEmailService)
             .sendEmail(any(EmailTemplate.class));
 
         registryNewStudentsApplicationService.registryNewStudents(input);
@@ -92,7 +92,7 @@ class RegistryNewStudentsApplicationServiceTest {
         verify(validatorEmail).validateEmailStudents(input.getEmail());
         verify(validatorEmail).isExistEmail(input.getEmail());
         verify(userCreatorService).createNewStudents(input);
-        verify(senderAdapter, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
+        verify(senderEmailService, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
             .sendEmail(any(EmailTemplate.class));
         verify(userRepository).saveAndFlush(user);
     }
