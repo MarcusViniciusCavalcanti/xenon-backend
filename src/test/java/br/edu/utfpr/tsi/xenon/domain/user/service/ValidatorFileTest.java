@@ -20,7 +20,7 @@ import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("Teste - Unidade - ValidatorrFile")
+@DisplayName("Teste - Unidade - ValidatoFile")
 class ValidatorFileTest {
 
     @Spy

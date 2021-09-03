@@ -21,7 +21,7 @@ import br.edu.utfpr.tsi.xenon.application.config.property.ApplicationDomainPrope
 import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRenewPasswordDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.EmailTemplate;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
@@ -47,7 +47,7 @@ class RenewPasswordServiceTest {
      */
 
     @Mock
-    private SenderAdapter senderAdapter;
+    private SenderEmailService senderEmailService;
 
     @Mock
     private BCryptPasswordEncoder cryptPasswordEncoder;
@@ -94,7 +94,7 @@ class RenewPasswordServiceTest {
             .when(tokenRedisRepository)
             .saveToken(anyString(), anyString(), eq(5L), eq(TimeUnit.HOURS));
         doNothing()
-            .when(senderAdapter)
+            .when(senderEmailService)
             .sendEmail(any(EmailTemplate.class));
 
         renewPasswordService.checkSolicitation(input);
@@ -105,7 +105,7 @@ class RenewPasswordServiceTest {
             .saveToken(anyString(), anyString(), eq(5L), eq(TimeUnit.HOURS));
         verify(accessCardRepository, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
             .findByUsername(input.getEmail());
-        verify(senderAdapter, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
+        verify(senderEmailService, timeout(TWO_HUNDRED_MILLISECONDS.toMillis()))
             .sendEmail(any(EmailTemplate.class));
     }
 

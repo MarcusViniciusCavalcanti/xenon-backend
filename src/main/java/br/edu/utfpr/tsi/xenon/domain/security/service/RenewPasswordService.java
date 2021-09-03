@@ -13,7 +13,7 @@ import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageChangePasswordTem
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRenewPassTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRequestRenewPassTemplate;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.TokenApplication;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
@@ -38,7 +38,7 @@ public class RenewPasswordService {
     private static final String TEMPLATE_PARAMETER_URL_REQUEST_RENEW_PASS = "%s:%s";
     private static final String TEMPLATE_URL_REQUEST_RENEW_PASS = "%s/request-renew-pass?params=%s";
 
-    private final SenderAdapter senderAdapter;
+    private final SenderEmailService senderEmailService;
     private final BCryptPasswordEncoder cryptPasswordEncoder;
     private final AccessCardRepository accessCardRepository;
     private final TokenRedisRepository tokenRedisRepository;
@@ -57,7 +57,7 @@ public class RenewPasswordService {
                 saveToken(token, key);
                 log.debug("Enviando e-mail para notificação solicitação de senha.");
                 var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
-                senderAdapter.sendEmail(template);
+                senderEmailService.sendEmail(template);
             }))
             .handleAsync((result, throwable) ->
                 catchError(result, throwable, "Erro na solicitação de pedido de senha {}"));
@@ -86,7 +86,7 @@ public class RenewPasswordService {
 
                         log.info("enviando email.");
                         var template = new MessageRenewPassTemplate(pass.pass(), email);
-                        senderAdapter.sendEmail(template);
+                        senderEmailService.sendEmail(template);
                         accessCardEntity.setPassword(pass.encoderPass());
 
                         log.info("Salvando nova senha.");
@@ -115,7 +115,7 @@ public class RenewPasswordService {
 
         log.debug("Enviando e-mail para notificação solicitação de senha.");
         var template = new MessageChangePasswordTemplate(accessCardEntity.getUsername());
-        senderAdapter.sendEmail(template);
+        senderEmailService.sendEmail(template);
 
         log.info("Processo concluído com sucesso.");
         return new ProcessResultDto().result(CHANGE_PASS_SUCCESSFULLY.getCode());

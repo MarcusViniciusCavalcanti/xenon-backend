@@ -9,7 +9,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputRegistryStudentDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.MessageRegistryTemplate;
-import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderAdapter;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderEmailService;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
 import br.edu.utfpr.tsi.xenon.domain.user.service.UserCreatorService;
 import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorEmail;
@@ -33,7 +33,7 @@ public class RegistryNewStudentsApplicationService implements UserServiceApplica
     private final UserRepository userRepository;
     private final ValidatorEmail validatorEmail;
     private final UserCreatorService userCreatorService;
-    private final SenderAdapter senderAdapter;
+    private final SenderEmailService senderEmailService;
     private final ApplicationDomainProperty applicationDomainProperty;
 
     @Transactional
@@ -92,7 +92,7 @@ public class RegistryNewStudentsApplicationService implements UserServiceApplica
             var url = PARAMETERS_URL
                 .formatted(applicationDomainProperty.getDomain(), parameterUrl);
             var template = new MessageRegistryTemplate(email, url, name);
-            senderAdapter.sendEmail(template);
+            senderEmailService.sendEmail(template);
         });
     }
 }

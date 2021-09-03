@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SenderAdapter {
+public class SenderEmailService {
 
     private static final String FROM = "noreply@xenon.utfpr.edu.br";
     private final JavaMailSender javaMailSender;
