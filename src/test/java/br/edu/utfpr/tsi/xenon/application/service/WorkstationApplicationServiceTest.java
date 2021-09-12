@@ -1,10 +1,12 @@
 package br.edu.utfpr.tsi.xenon.application.service;
 
+import static br.edu.utfpr.tsi.xenon.domain.notification.model.TopicApplication.CHANGE_WORKSTATION;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -12,6 +14,9 @@ import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto.ModeEnum;
+import br.edu.utfpr.tsi.xenon.domain.notification.model.UpdateWorkstationMessage;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderMessageWebSocketService;
+import br.edu.utfpr.tsi.xenon.domain.notification.service.SendingMessageService;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
@@ -36,6 +41,9 @@ class WorkstationApplicationServiceTest {
     @Mock
     private WorkstationService workstationService;
 
+    @Mock
+    private SendingMessageService senderMessageWebSocketService;
+
     @InjectMocks
     private WorkstationApplicationService workstationApplicationService;
 
@@ -59,6 +67,7 @@ class WorkstationApplicationServiceTest {
             .name(name)
             .port(port);
 
+        when(workstationService.formatterIp(input.getIp())).thenReturn(input.getIp());
         when(workstationService.create(ip, name, mode.name(), port)).thenReturn(workstation);
         when(workstationRepository.existsByName(input.getName())).thenReturn(FALSE);
         when(workstationRepository.existsByIp(input.getIp())).thenReturn(FALSE);
@@ -91,7 +100,7 @@ class WorkstationApplicationServiceTest {
             .name(workstation.getName())
             .port(port);
 
-        when(workstationService.create(ip, name, mode.name(), port)).thenReturn(workstation);
+        when(workstationService.formatterIp(ip)).thenReturn(ip);
         when(workstationRepository.existsByName(input.getName())).thenReturn(TRUE);
 
         var exception = assertThrows(WorkStationException.class,
@@ -124,7 +133,7 @@ class WorkstationApplicationServiceTest {
             .name(workstation.getName())
             .port(port);
 
-        when(workstationService.create(ip, name, mode.name(), port)).thenReturn(workstation);
+        when(workstationService.formatterIp(ip)).thenReturn(ip);
         when(workstationRepository.existsByName(input.getName())).thenReturn(FALSE);
         when(workstationRepository.existsByIp(input.getIp())).thenReturn(TRUE);
 
@@ -160,6 +169,7 @@ class WorkstationApplicationServiceTest {
             .name(name)
             .port(9090);
 
+        when(workstationService.formatterIp(ip)).thenReturn(ip);
         when(workstationRepository.findById(workstation.getId())).thenReturn(Optional.of(workstation));
         when(workstationService.replaceData(workstation, name,  mode.name(), ip, port)).thenReturn(workstation);
         when(workstationRepository.existsByName(name)).thenReturn(FALSE);
@@ -176,6 +186,79 @@ class WorkstationApplicationServiceTest {
     }
 
     @Test
+    @DisplayName("Deve verificar se nome existe quando nome for diferente")
+    void shouldHaveCheckNameWhenNameStationIsIdf() {
+        var faker = Faker.instance();
+        var ip = faker.internet().ipV6Address();
+        var name = faker.rockBand().name();
+        var mode = ModeEnum.AUTOMATIC;
+        var port = 9000;
+
+        var workstation = new WorkstationEntity();
+        workstation.setId(1L);
+        workstation.setName(name);
+        workstation.setPort(port);
+        workstation.setMode(ModeEnum.MANUAL.name());
+        workstation.setIp(faker.internet().ipV6Address());
+
+        var input = new InputWorkstationDto()
+            .name(name)
+            .port(port)
+            .ip(ip)
+            .mode(mode);
+
+        when(workstationService.formatterIp(ip)).thenReturn(ip);
+        when(workstationRepository.findById(workstation.getId())).thenReturn(Optional.of(workstation));
+        when(workstationService.replaceData(workstation, name,  mode.name(), ip, port)).thenReturn(workstation);
+        when(workstationRepository.existsByIp(ip)).thenReturn(FALSE);
+        when(workstationRepository.saveAndFlush(workstation)).thenReturn(workstation);
+
+        workstationApplicationService.update(input, workstation.getId());
+
+        verify(workstationRepository).findById(workstation.getId());
+        verify(workstationService).replaceData(workstation, name, mode.name(), ip, port);
+        verify(workstationRepository, never()).existsByName(any());
+        verify(workstationRepository).existsByIp(ip);
+        verify(workstationRepository).saveAndFlush(workstation);
+    }
+
+    @Test
+    @DisplayName("Deve verificar se ip existe quando ip for diferente")
+    void shouldHaveCheckIpWhenNameStationIsIdf() {
+        var faker = Faker.instance();
+        var ip = faker.internet().ipV6Address();
+        var name = faker.rockBand().name();
+        var mode = ModeEnum.AUTOMATIC;
+        var port = 9000;
+
+        var workstation = new WorkstationEntity();
+        workstation.setId(1L);
+        workstation.setName(faker.name().name());
+        workstation.setPort(port);
+        workstation.setMode(ModeEnum.MANUAL.name());
+        workstation.setIp(ip);
+
+        var input = new InputWorkstationDto()
+            .name(name)
+            .port(port)
+            .ip(ip)
+            .mode(mode);
+
+        when(workstationService.formatterIp(ip)).thenReturn(ip);
+        when(workstationRepository.findById(workstation.getId())).thenReturn(Optional.of(workstation));
+        when(workstationService.replaceData(workstation, name,  mode.name(), ip, port)).thenReturn(workstation);
+        when(workstationRepository.saveAndFlush(workstation)).thenReturn(workstation);
+
+        workstationApplicationService.update(input, workstation.getId());
+
+        verify(workstationRepository).findById(workstation.getId());
+        verify(workstationService).replaceData(workstation, name, mode.name(), ip, port);
+        verify(workstationRepository).existsByName(name);
+        verify(workstationRepository, never()).existsByIp(any());
+        verify(workstationRepository).saveAndFlush(workstation);
+    }
+
+    @Test
     @DisplayName("Deve deletar com sucesso")
     void shouldHaveDeleteWorkstation() {
         var faker = Faker.instance();
@@ -184,15 +267,24 @@ class WorkstationApplicationServiceTest {
         workstation.setId(1L);
         workstation.setIp(faker.internet().ipV6Address());
         workstation.setName(faker.rockBand().name());
+        workstation.setKey("key");
 
         doNothing()
             .when(workstationRepository)
             .delete(workstation);
         when(workstationRepository.findById(workstation.getId())).thenReturn(Optional.of(workstation));
+        doNothing()
+            .when(senderMessageWebSocketService)
+            .sendBeforeTransactionCommit(
+                any(UpdateWorkstationMessage.class),
+                eq(CHANGE_WORKSTATION.topicTo(workstation.getId().toString())));
 
         workstationApplicationService.delete(workstation.getId());
 
         verify(workstationRepository).findById(workstation.getId());
         verify(workstationRepository).delete(workstation);
+        verify(senderMessageWebSocketService).sendBeforeTransactionCommit(
+            any(UpdateWorkstationMessage.class),
+            eq(CHANGE_WORKSTATION.topicTo(workstation.getId().toString())));
     }
 }

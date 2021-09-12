@@ -20,6 +20,7 @@ import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -123,7 +124,7 @@ class CarsAggregatorTest {
                 car.setPlate("plate");
 
                 return car;
-            }).collect(Collectors.toList());
+            }).collect(Collectors.toCollection(LinkedList::new));
         user.setCar(cars);
 
         var exception = assertThrows(BusinessException.class,

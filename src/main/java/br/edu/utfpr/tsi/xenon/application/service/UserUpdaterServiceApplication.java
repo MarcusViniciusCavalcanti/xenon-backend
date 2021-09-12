@@ -101,7 +101,7 @@ public class UserUpdaterServiceApplication implements UserServiceApplication {
     }
 
     @Transactional
-    @CachePut(cacheNames = "User", key = "#input.userId")
+    @CacheEvict(cacheNames = "User", key = "#input.userId")
     public ProcessResultDto unauthorizedAccess(InputAccessUserDto input) {
         var id = input.getUserId();
         log.info(
@@ -124,7 +124,7 @@ public class UserUpdaterServiceApplication implements UserServiceApplication {
     }
 
     @Transactional
-    @CachePut(cacheNames = "User", key = "#input.userId")
+    @CacheEvict(cacheNames = "User", key = "#input.userId")
     public ProcessResultDto authorizedAccess(InputAccessUserDto input) {
         log.info("Iniciando processo para autorizar acesso de usuário");
         return userRepository.findById(input.getUserId())

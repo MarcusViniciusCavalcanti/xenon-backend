@@ -2,10 +2,13 @@ package br.edu.utfpr.tsi.xenon.application.config.bean;
 
 
 import br.edu.utfpr.tsi.xenon.application.config.property.SecurityProperty;
+import br.edu.utfpr.tsi.xenon.application.handler.AccessDeniedFailureHandler;
+import br.edu.utfpr.tsi.xenon.application.handler.AuthenticationFailureHandlerImpl;
 import br.edu.utfpr.tsi.xenon.domain.security.filter.JwtAuthorizationFilter;
 import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -46,6 +49,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final UserDetailsService userDetailsService;
     private final SecurityContextUserService securityContextUserService;
     private final SecurityProperty securityProperty;
+    private final MessageSource messageSource;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
@@ -87,11 +91,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .authorizeRequests()
             .antMatchers(HttpMethod.POST, POST_URL_PUBLIC).permitAll()
             .antMatchers(HttpMethod.GET, GET_URL_PUBLIC).permitAll()
+            .antMatchers("/ws/**").permitAll()
             .anyRequest().authenticated();
     }
 
     private void configureHandlers(HttpSecurity http) throws Exception {
         http.exceptionHandling()
+            .accessDeniedHandler(new AccessDeniedFailureHandler(messageSource))
+            .authenticationEntryPoint(new AuthenticationFailureHandlerImpl(messageSource))
             .and()
             .addFilterBefore(
                 new JwtAuthorizationFilter(

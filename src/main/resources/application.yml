@@ -34,6 +34,7 @@ xenon:
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
       domain: http://localhost:8080/api
+      allowedWebsocket: http://localhost:63342
 
 # server configuration
 server:
@@ -43,7 +44,6 @@ server:
     application-display-name: xenon-api
 
 # spring framework configuration
-
 spring:
   mvc:
     throw-exception-if-no-handler-found: true

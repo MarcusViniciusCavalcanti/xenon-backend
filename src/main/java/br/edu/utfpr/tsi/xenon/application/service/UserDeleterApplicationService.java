@@ -10,7 +10,7 @@ import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
-import java.util.Collections;
+import java.util.LinkedList;
 import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
@@ -51,7 +51,7 @@ public class UserDeleterApplicationService {
             userEntity.setAuthorisedAccess(FALSE);
             userEntity.getAccessCard().setEnabled(FALSE);
             userEntity.setDisableReason(reason);
-            userEntity.setCar(Collections.emptyList());
+            userEntity.setCar(new LinkedList<>());
 
             carRepository.deleteByUser(userEntity);
             userRepository.saveAndFlush(userEntity);

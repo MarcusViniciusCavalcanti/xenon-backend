@@ -102,7 +102,7 @@ tags:
 
       ````
       {
-        "username": "email@email.com",
+        "email": "email@email.com",
         "password": "password"
       }
       ````
@@ -223,6 +223,59 @@ tags:
       * __NONE__ (destivado) neste modo o Xeno apenas enviaram a notificação de um reconhecimento.
 
       Importante resultar que apenas será autorizado requisições de reconhecimento de dispositivos vinculados a uma estação de trabalho.
+
+
+      ### Tópicos
+      Api dispõe para cada estação de trabalho dois tópicos sobre o protocolo __websock/stomp__, uma para
+      receber os reconhecimentos que dispositivo vinculado enviou, e outro para enviar atualizações
+      que houveram na estações de trabalho.
+
+      `/api/ws` endpoint do websocket, para se conectar este endpoint e necessário autenticação, ou seja
+      enviar também o header `Authorization`.
+
+      * `/topic/change-workstation/{id}` para receber atualiações, um objeto como o exemplo abaixo será enviado:
+      ```
+      {
+        "type": "UPDATE",
+        "workstation": {
+          "id": 1,
+          "name": "Portão 10",
+          "ip": "192.168.001.002",
+          "mode": "MANUAL",
+          "port": 9090
+        }
+      }
+      ```
+
+      Os tipos de atualizações possíveis:
+      * __UPDATE__ atualização da estação de trabalho.
+      * __DELETE__ a estação de trabalho foi removida.
+
+      * `/topic/workstation/{id}/recognize` para receber reconhecimentos, um objeto como exemplo abaixo será enviado:
+      ```
+      {
+
+      }
+      ```
+
+      __EXEMPLO DE CÓDIGO__
+      ```javascript
+            const headerName = 'Authorization';
+            const token = 'Bearer <token>';
+
+            const headers = {};
+            headers[headerName] = token;
+
+            const socket = new SockJS(`https://xeono:8080/api/ws`);
+            stomp = Stomp.over(socket);
+            stomp.connect({"Authorization": token}, function(frame){
+                console.log(frame)
+
+                stomp.subscribe('/topic/change-workstation/1', function(messageOutput) {
+                    console.log("New Message: "+ messageOutput);
+                });
+            });
+      ```
 paths:
     # security
     /login/:
@@ -1438,7 +1491,10 @@ components:
           type: integer
           description: porta para acesso do dispositivo
           example: 9090
-
+        key:
+          type: string
+          description: Chave de comunicação para autorizar o dispositivo.
+          example: HNjDjSdws5
 
       #Inputs
     InputLogin:
@@ -1550,6 +1606,7 @@ components:
         confirmPassword:
           type: string
           description: Confirmação da senha.
+          example: 87654321
     InputRemoveCar:
       type: object
       required:

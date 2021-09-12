@@ -2,7 +2,9 @@ package br.edu.utfpr.tsi.xenon.application.service;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -48,14 +50,13 @@ class CarApplicationServiceTest {
         var role = new RoleEntity();
         var accessCard = new AccessCardEntity();
         accessCard.setRoleEntities(List.of(role));
-        var user = new UserEntity();
-        user.setAccessCard(accessCard);
-        user.setTypeUser(TypeUser.STUDENTS.name());
+        var user = mock(UserEntity.class);
 
         var input = new InputNewCarDto()
             .model("model")
             .plate("plate");
 
+        when(user.lastCar()).thenReturn(new CarEntity());
         when(securityContextUserService.getUserByContextSecurity("token"))
             .thenReturn(Optional.of(user));
         when(carRepository.saveAndFlush(any(CarEntity.class))).thenReturn(new CarEntity());
@@ -65,6 +66,7 @@ class CarApplicationServiceTest {
 
         carApplicationService.includeNewCar(input, "token");
 
+        verify(user).lastCar();
         verify(carRepository).saveAndFlush(any(CarEntity.class));
         verify(securityContextUserService).getUserByContextSecurity("token");
         verify(carsAggregator).includeNewCar(user, input.getModel(), input.getPlate());
@@ -105,12 +107,12 @@ class CarApplicationServiceTest {
             .thenReturn(Optional.of(user));
         doNothing()
             .when(carRepository)
-            .delete(any(CarEntity.class));
+            .deleteByUserAndPlate(eq(user), any());
 
         var input = new InputRemoveCarDto().plate("plate");
         carApplicationService.removeCar(input, "token");
 
         verify(securityContextUserService).getUserByContextSecurity("token");
-        verify(carRepository).delete(any(CarEntity.class));
+        verify(carRepository).deleteByUserAndPlate(eq(user), any());
     }
 }

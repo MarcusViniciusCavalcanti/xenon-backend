@@ -7,7 +7,6 @@ import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.CarsAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
-import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,7 +27,7 @@ public class CarApplicationService {
         return securityContextUserService.getUserByContextSecurity(authorization)
             .map(userEntity -> {
                 carsAggregator.includeNewCar(userEntity, input.getModel(), input.getPlate());
-                return getCarInUser(userEntity, input.getPlate());
+                return userEntity.lastCar();
             })
             .map(carRepository::saveAndFlush)
             .map(this::getCarDto)
@@ -38,13 +37,19 @@ public class CarApplicationService {
     @Transactional
     public void removeCar(InputRemoveCarDto input, String authorization) {
         securityContextUserService.getUserByContextSecurity(authorization)
-            .map(userEntity -> getCarInUser(userEntity, input.getPlate()))
-            .ifPresent(carRepository::delete);
+            .ifPresent(userEntity -> {
+                var car = getCarInUser(userEntity, input.getPlate());
+                userEntity.getCar().remove(car);
+                carRepository.deleteByUserAndPlate(userEntity, car.getPlate());
+            });
     }
 
     private CarEntity getCarInUser(UserEntity userEntity, String plate) {
         return userEntity.getCar().stream()
-            .filter(carEntity -> carEntity.getPlate().equals(plate))
+            .filter(carEntity -> {
+                var plateNormalize = carsAggregator.normalizePlate(plate);
+                return carEntity.getPlate().equals(carsAggregator.formatterPlate(plateNormalize));
+            })
             .findFirst()
             .orElse(new CarEntity());
     }

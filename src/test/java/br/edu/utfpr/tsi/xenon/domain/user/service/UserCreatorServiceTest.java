@@ -22,6 +22,8 @@ import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
 import com.github.javafaker.Faker;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -167,6 +169,8 @@ class UserCreatorServiceTest {
         var car = new CarEntity();
         car.setId(1L);
         car.setNumberAccess(0);
-        entity.setCar(List.of(car));
+        var cars = new LinkedList<CarEntity>();
+        cars.add(car);
+        entity.setCar(cars);
     }
 }

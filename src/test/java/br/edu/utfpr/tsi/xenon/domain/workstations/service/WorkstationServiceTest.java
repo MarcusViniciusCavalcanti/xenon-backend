@@ -1,26 +1,35 @@
 package br.edu.utfpr.tsi.xenon.domain.workstations.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
+import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto.ModeEnum;
+import br.edu.utfpr.tsi.xenon.domain.security.service.KeyService;
+import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import com.github.javafaker.Faker;
+import java.security.NoSuchAlgorithmException;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - ValidatorFile")
 class WorkstationServiceTest {
 
+    @Mock
+    private KeyService keyService;
+
     @InjectMocks
     private WorkstationService workstationService;
 
     @Test
     @DisplayName("Deve criar workstation com ipv4")
-    void shouldHaveCreateWorkstationIpv4() {
+    void shouldHaveCreateWorkstationIpv4() throws NoSuchAlgorithmException {
         var faker = Faker.instance();
         var ip = faker.internet().ipV4Address();
         var split = ip.split("\\.");
@@ -33,6 +42,8 @@ class WorkstationServiceTest {
         var name = faker.rockBand().name();
         var mode = ModeEnum.MANUAL.name();
 
+        when(keyService.createKey()).thenReturn("key");
+
         var workstation = workstationService.create(ip, name, mode, port);
         assertEquals(ipExpected, workstation.getIp());
         assertEquals(name, workstation.getName());
@@ -42,12 +53,14 @@ class WorkstationServiceTest {
 
     @Test
     @DisplayName("Deve criar workstation com ipv6")
-    void shouldHaveCreateWorkstationIpv6() {
+    void shouldHaveCreateWorkstationIpv6() throws NoSuchAlgorithmException {
         var faker = Faker.instance();
         var ip = faker.internet().ipV6Address();
         var name = faker.rockBand().name();
         var mode = ModeEnum.AUTOMATIC.name();
         var port = 9000;
+
+        when(keyService.createKey()).thenReturn("key");
 
         var workstation = workstationService.create(ip, name, mode, port);
         assertEquals(ip, workstation.getIp());

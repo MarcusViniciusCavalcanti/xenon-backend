@@ -15,6 +15,7 @@ import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.METHOD_NOT_ALLOWED;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 import static org.springframework.http.HttpStatus.UNAUTHORIZED;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 import static org.springframework.http.HttpStatus.UNSUPPORTED_MEDIA_TYPE;
 
 import br.edu.utfpr.tsi.xenon.application.controller.EndpointsTranslator;
@@ -27,6 +28,7 @@ import br.edu.utfpr.tsi.xenon.structure.exception.EmailErrorException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.exception.RegistryUserException;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
+import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -116,7 +118,7 @@ public class HandlerError implements EndpointsTranslator {
                 return new ErrorDetailsDto()
                     .descriptionError(msg)
                     .field(field);
-            }).collect(Collectors.toList());
+            }).toList();
 
         return getErrorBaseDtoResponseEntity(request, errorsDetails);
     }
@@ -174,7 +176,7 @@ public class HandlerError implements EndpointsTranslator {
                 return new ErrorDetailsDto()
                     .descriptionError(msg)
                     .field(field);
-            }).collect(Collectors.toList());
+            }).toList();
 
         return getErrorBaseDtoResponseEntity(request, errors);
     }
@@ -221,6 +223,14 @@ public class HandlerError implements EndpointsTranslator {
         log.error("Error no cadastro: {}", exception.getMessage());
         return buildResponseError(request, exception.getCode(),
             HttpStatus.valueOf(exception.getStatusCode()));
+    }
+
+    @ExceptionHandler(WorkStationException.class)
+    public ResponseEntity<ErrorBaseDto> workstationException(
+        WorkStationException exception,
+        HttpServletRequest request) {
+        return buildResponseError(
+            request, exception.getCode(), UNPROCESSABLE_ENTITY, exception.getValue());
     }
 
     @ExceptionHandler({Exception.class, RuntimeException.class})

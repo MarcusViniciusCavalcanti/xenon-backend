@@ -24,6 +24,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository;
 import java.util.Locale;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -158,6 +159,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
         workstation.setName(faker.name().name());
         workstation.setIp(faker.internet().ipV4Address());
         workstation.setPort(9090);
+        workstation.setKey("key");
 
         workstation = workstationRepository.saveAndFlush(workstation);
 
@@ -210,6 +212,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
         workstation.setName(faker.name().name());
         workstation.setIp(faker.internet().ipV4Address());
         workstation.setPort(9090);
+        workstation.setKey("key");
 
         workstation = workstationRepository.saveAndFlush(workstation);
 

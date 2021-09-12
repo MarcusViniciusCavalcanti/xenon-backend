@@ -17,6 +17,7 @@ import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -49,7 +50,9 @@ class UserDeleterApplicationServiceTest {
         var accessCard = new AccessCardEntity();
         user.setAccessCard(accessCard);
         var car = new CarEntity();
-        user.setCar(List.of(car));
+        var cars = new LinkedList<CarEntity>();
+        cars.add(car);
+        user.setCar(cars);
 
         when(securityContextUserService.getUserByContextSecurity("token"))
             .thenReturn(Optional.of(user));
@@ -72,7 +75,9 @@ class UserDeleterApplicationServiceTest {
         var accessCard = new AccessCardEntity();
         user.setAccessCard(accessCard);
         var car = new CarEntity();
-        user.setCar(List.of(car));
+        var cars = new LinkedList<CarEntity>();
+        cars.add(car);
+        user.setCar(cars);
 
         when(userRepository.findById(id)).thenReturn(Optional.of(user));
         when(userRepository.saveAndFlush(user)).thenReturn(user);

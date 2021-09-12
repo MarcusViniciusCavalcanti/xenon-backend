@@ -3,6 +3,7 @@ package br.edu.utfpr.tsi.xenon.domain.security.service;
 
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.structure.exception.TokenInvalidException;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -42,7 +43,7 @@ public class SecurityContextUserService {
             return;
         }
 
-        throw new AuthorizationServiceException("token está invalido");
+        throw new TokenInvalidException("token está invalido");
     }
 
     public Optional<UserEntity> getUserByContextSecurity(String authorization) {

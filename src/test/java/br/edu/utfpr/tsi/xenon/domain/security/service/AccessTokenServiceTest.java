@@ -32,11 +32,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - AccessTokenCreator")
 class AccessTokenServiceTest {
+
+    @Spy
+    private ObjectMapper objectMapper;
 
     @Mock
     private SecurityProperty securityProperty;
@@ -89,18 +93,18 @@ class AccessTokenServiceTest {
         try {
             var objectMapper = new ObjectMapper();
             var nodes = objectMapper.readTree(partTwo);
-            var userNode = nodes.get("user");
+            var userDto = objectMapper.readValue(nodes.get("user").asText(), UserDto.class);
 
-            assertEquals(user.getTypeUser(), userNode.get("type").textValue());
-            assertEquals(user.getAvatar(), userNode.get("avatar").textValue());
-            assertEquals(user.getId(), userNode.get("id").intValue());
-            assertEquals(user.getName(), userNode.get("name").textValue());
-            assertEquals(user.getAuthorisedAccess(), userNode.get("authorisedAccess").booleanValue());
-            assertEquals(user.getAccessCard().isEnabled(), userNode.get("enabled").booleanValue());
-            assertEquals(user.getAccessCard().getUsername(), userNode.get("email").textValue());
+            assertEquals(user.getTypeUser(), userDto.getType().name());
+            assertEquals(user.getAvatar(), userDto.getAvatar());
+            assertEquals(user.getId(), userDto.getId());
+            assertEquals(user.getName(), userDto.getName());
+            assertEquals(user.getAuthorisedAccess(), userDto.getAuthorisedAccess());
+            assertEquals(user.getAccessCard().isEnabled(), userDto.getEnabled());
+            assertEquals(user.getAccessCard().getUsername(), userDto.getEmail());
 
-            assertNull(nodes.get("disableReason"));
-            assertNull(nodes.get("cars"));
+            assertNull(userDto.getDisableReason());
+            assertNull(userDto.getCars());
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

@@ -11,5 +11,7 @@ public interface CarRepository extends JpaRepository<CarEntity, Long> {
 
     void deleteByUser(UserEntity user);
 
+    void deleteByUserAndPlate(UserEntity user, String plate);
+
     List<CarEntity> findByUser(UserEntity userDisabled);
 }

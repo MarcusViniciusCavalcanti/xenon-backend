@@ -1,13 +1,26 @@
 package br.edu.utfpr.tsi.xenon.domain.workstations.service;
 
+import br.edu.utfpr.tsi.xenon.domain.security.service.KeyService;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
+import java.security.NoSuchAlgorithmException;
+import java.security.spec.KeySpec;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class WorkstationService {
 
     private static final String IPV4_PATTERN = "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$";
+
+    private final KeyService keyService;
 
     public WorkstationEntity create(String ip, String name, String mode, Integer port) {
         var ipFormatted = formatterIp(ip);
@@ -16,6 +29,14 @@ public class WorkstationService {
         workstation.setIp(ipFormatted);
         workstation.setMode(mode);
         workstation.setPort(port);
+
+        try {
+            var key = keyService.createKey();
+            workstation.setKey(key);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("erro ao criar chave {}", e.getMessage());
+            throw new IllegalStateException(e);
+        }
 
         return workstation;
     }
@@ -35,7 +56,7 @@ public class WorkstationService {
         return entity;
     }
 
-    private String formatterIp(String ip) {
+    public String formatterIp(String ip) {
         var isIpv4 = ip.matches(IPV4_PATTERN);
         if (isIpv4) {
             var split = ip.split("\\.");

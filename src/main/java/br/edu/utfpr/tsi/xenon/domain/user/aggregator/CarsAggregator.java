@@ -20,6 +20,7 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 @Slf4j
 @Component
@@ -66,9 +67,7 @@ public class CarsAggregator {
             .replace("_", "");
 
         if (REGEX_PLATE.asPredicate().test(value)) {
-            var partOne = value.toLowerCase(Locale.ROOT).substring(0, 3);
-            var partTow = value.toLowerCase(Locale.ROOT).substring(3, 7);
-            var plateFormatted = "%s-%s".formatted(partOne, partTow).toUpperCase(Locale.ROOT);
+            var plateFormatted = formatterPlate(value);
 
             existCarByPlate(plateFormatted);
 
@@ -78,11 +77,23 @@ public class CarsAggregator {
             car.setNumberAccess(0);
             car.setUser(user);
 
-            user.getCar().add(car);
+            user.includeLastCar(car);
         } else {
             throw new PlateException(plateCar, PLATE_INVALID.getCode());
         }
+    }
 
+    public String normalizePlate(String value) {
+        return value.trim()
+            .replace(" ", "")
+            .replace("-", "")
+            .replace("_", "");
+    }
+
+    public String formatterPlate(String value) {
+        var partOne = value.toLowerCase(Locale.ROOT).substring(0, 3);
+        var partTow = value.toLowerCase(Locale.ROOT).substring(3, 7);
+        return "%s-%s".formatted(partOne, partTow).toUpperCase(Locale.ROOT);
     }
 
     private void existCarByPlate(String plate) {

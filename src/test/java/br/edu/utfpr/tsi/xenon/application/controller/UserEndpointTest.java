@@ -388,7 +388,7 @@ class UserEndpointTest extends AbstractSecurityContext {
             .body("name", is(userSearch.getName()))
             .body("email", is(userSearch.getAccessCard().getUsername()))
             .body("type", is(userSearch.getTypeUser()))
-            .body("cars.findAll { it }.id", hasItems(userSearch.getCar().get(0).getId().intValue()))
+            .body("cars.findAll { it }.id", hasItems(userSearch.firstCar().getId().intValue()))
             .body("roles.findAll { it }.id", hasItems(1, 3))
             .body("avatar", is(userSearch.getAvatar()))
             .body("disableReason", nullValue())

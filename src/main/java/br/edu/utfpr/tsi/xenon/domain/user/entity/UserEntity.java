@@ -18,7 +18,7 @@ import javax.persistence.PrePersist;
 import javax.persistence.PreUpdate;
 import javax.persistence.Table;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.EqualsAndHashCode.Exclude;
 import lombok.ToString;
 
 @Entity
@@ -35,7 +35,7 @@ public class UserEntity {
 
     @OneToOne
     @MapsId
-    @EqualsAndHashCode.Exclude
+    @Exclude
     @JoinColumn(name = "access_card_id")
     private AccessCardEntity accessCard;
 
@@ -67,8 +67,25 @@ public class UserEntity {
         updatedAt = LocalDateTime.now();
     }
 
+    public CarEntity lastCar() {
+        return car.isEmpty() ? null : car.get(car.size() - 1);
+    }
+
+    public void includeLastCar(CarEntity carEntity) {
+        if (car.isEmpty()) {
+            car.add(0, carEntity);
+        } else {
+            car.add(car.size(), carEntity);
+        }
+    }
+
+    public CarEntity firstCar() {
+        return car.get(0);
+    }
+
     @PreUpdate
     private void updateAccessCard() {
         updatedAt = LocalDateTime.now();
     }
+
 }

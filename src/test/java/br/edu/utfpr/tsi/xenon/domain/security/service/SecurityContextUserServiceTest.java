@@ -1,13 +1,20 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
-import static java.lang.Boolean.*;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static java.lang.Boolean.FALSE;
+import static java.lang.Boolean.TRUE;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.structure.exception.TokenInvalidException;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import com.github.javafaker.Faker;
 import java.util.List;
@@ -18,7 +25,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.access.AuthorizationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
@@ -48,7 +54,8 @@ class SecurityContextUserServiceTest {
         var token = RandomStringUtils.random(10);
         when(tokenCreator.isValid(token)).thenReturn(FALSE);
 
-        assertThrows(AuthorizationServiceException.class, () -> service.receiveTokenToSecurityHolder(token));
+        assertThrows(TokenInvalidException.class,
+            () -> service.receiveTokenToSecurityHolder(token));
 
         verify(accessCardRepository, never()).loadUserByUsername(anyString());
     }
@@ -60,7 +67,8 @@ class SecurityContextUserServiceTest {
         when(tokenCreator.isValid(token)).thenReturn(TRUE);
         when(tokenCreator.getEmail(token)).thenReturn(Optional.empty());
 
-        assertThrows(BadCredentialsException.class, () -> service.receiveTokenToSecurityHolder(token));
+        assertThrows(BadCredentialsException.class,
+            () -> service.receiveTokenToSecurityHolder(token));
 
         verify(tokenCreator).isValid(token);
         verify(tokenCreator).getEmail(token);
@@ -76,7 +84,8 @@ class SecurityContextUserServiceTest {
         when(tokenCreator.getEmail(token)).thenReturn(Optional.of(email));
         when(accessCardRepository.loadUserByUsername(email)).thenReturn(null);
 
-        assertThrows(BadCredentialsException.class, () -> service.receiveTokenToSecurityHolder(token));
+        assertThrows(BadCredentialsException.class,
+            () -> service.receiveTokenToSecurityHolder(token));
 
         verify(tokenCreator).isValid(token);
         verify(tokenCreator).getEmail(token);

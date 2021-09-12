@@ -10,6 +10,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
@@ -208,7 +209,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
         setAuthentication(input);
 
         var inputRemoveCar = new InputRemoveCarDto()
-            .plate(user.getCar().get(0).getPlate());
+            .plate(user.firstCar().getPlate());
 
         given(specAuthentication)
             .accept(MediaType.APPLICATION_JSON_VALUE)
@@ -220,6 +221,10 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .statusCode(NO_CONTENT.value())
             .when()
             .delete(URL_REMOVE_CAR);
+
+        var cars = carRepository.findByUser(user);
+
+        assertFalse(cars.stream().anyMatch(carEntity -> carEntity.getPlate().equals(inputRemoveCar.getPlate())));
 
         deleteUser(user);
     }

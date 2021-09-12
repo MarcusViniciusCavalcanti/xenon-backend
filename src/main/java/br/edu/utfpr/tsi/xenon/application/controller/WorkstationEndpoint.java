@@ -4,13 +4,17 @@ import br.edu.utfpr.tsi.xenon.application.api.WorkstationApi;
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.rules.IsAdmin;
+import br.edu.utfpr.tsi.xenon.application.rules.IsOperatorOrAdmin;
 import br.edu.utfpr.tsi.xenon.application.service.WorkstationApplicationService;
+import java.util.List;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -61,6 +65,15 @@ public class WorkstationEndpoint implements WorkstationApi, EndpointsTranslator 
         log.info("Recebendo requisição para deletar workstation id: {}", id);
         workstationApplicationService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @IsOperatorOrAdmin
+    @GetMapping
+    public ResponseEntity<List<WorkstationDto>> getAll(String authorization) {
+        log.info("Recebendo requisição para recupera todas as estações de trabalho");
+        var workstations = workstationApplicationService.getAll();
+        return ResponseEntity.ok(workstations);
     }
 
     @Override

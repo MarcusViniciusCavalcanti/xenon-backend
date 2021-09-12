@@ -114,8 +114,10 @@ public class RenewPasswordService {
         accessCardRepository.saveAndFlush(accessCardEntity);
 
         log.debug("Enviando e-mail para notificação solicitação de senha.");
-        var template = new MessageChangePasswordTemplate(accessCardEntity.getUsername());
-        senderEmailService.sendEmail(template);
+        CompletableFuture.runAsync(() -> {
+            var template = new MessageChangePasswordTemplate(accessCardEntity.getUsername());
+            senderEmailService.sendEmail(template);
+        });
 
         log.info("Processo concluído com sucesso.");
         return new ProcessResultDto().result(CHANGE_PASS_SUCCESSFULLY.getCode());

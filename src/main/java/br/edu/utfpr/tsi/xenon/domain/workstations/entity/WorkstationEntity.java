@@ -29,4 +29,7 @@ public class WorkstationEntity {
 
     @Column(name = "mode", nullable = false)
     private String mode;
+
+    @Column(name = "key", nullable = false)
+    private String key;
 }

@@ -3,9 +3,13 @@ package br.edu.utfpr.tsi.xenon.application.config.bean;
 import static java.lang.Boolean.TRUE;
 
 import br.edu.utfpr.tsi.xenon.application.config.property.RedisProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.CarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
+import java.util.ArrayList;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -14,7 +18,6 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext.SerializationPair;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
@@ -63,22 +66,34 @@ public class RedisConfiguration {
         return builder -> {
             var pageUser = new Jackson2JsonRedisSerializer<>(PageUserDto.class);
             pageUser.setObjectMapper(objectMapper);
+            var workstationListType = objectMapper.getTypeFactory()
+                .constructCollectionType(ArrayList.class, WorkstationDto.class);
+            var workstation = new Jackson2JsonRedisSerializer<>(workstationListType);
+            workstation.setObjectMapper(objectMapper);
+
+            var user = new Jackson2JsonRedisSerializer<>(UserDto.class);
+            user.setObjectMapper(objectMapper);
+
+            var car = new Jackson2JsonRedisSerializer<>(CarDto.class);
+            car.setObjectMapper(objectMapper);
 
             builder
                 .withCacheConfiguration("User",
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(10))
-                        .serializeValuesWith(SerializationPair.fromSerializer(
-                            new GenericJackson2JsonRedisSerializer())))
+                        .serializeValuesWith(SerializationPair.fromSerializer(user)))
                 .withCacheConfiguration("UserPage",
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(1))
                         .serializeValuesWith(SerializationPair.fromSerializer(pageUser)))
+                .withCacheConfiguration("Workstation",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(10))
+                        .serializeValuesWith(SerializationPair.fromSerializer(workstation)))
                 .withCacheConfiguration("Car",
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(10))
-                        .serializeValuesWith(SerializationPair.fromSerializer(
-                            new GenericJackson2JsonRedisSerializer())));
+                        .serializeValuesWith(SerializationPair.fromSerializer(car)));
         };
     }
 }

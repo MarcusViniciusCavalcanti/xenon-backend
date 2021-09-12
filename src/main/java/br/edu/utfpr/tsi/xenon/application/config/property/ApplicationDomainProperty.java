@@ -8,4 +8,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class ApplicationDomainProperty {
 
     private String domain;
+    private String allowedWebsocket;
 }
