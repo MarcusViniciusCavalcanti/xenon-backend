@@ -42,8 +42,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         "/request-renew-pass/**",
         "/activate-registry/**",
         "/swagger-ui/**",
+        "/docs/swagger-config/**",
         "/v3/api-docs/swagger-config/**",
-        "/api-doc.yml",
+        "/swagger-ui.html/**",
+        "/v3/docs",
+        "/docs/**",
     };
 
     private final UserDetailsService userDetailsService;

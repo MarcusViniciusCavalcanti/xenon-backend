@@ -1,7 +1,7 @@
 package br.edu.utfpr.tsi.xenon.domain.notification.model;
 
 public enum TopicApplication {
-    CHANGE_WORKSTATION("/change-workstation");
+    CHANGE_WORKSTATION("/change-workstation"), RECOGNIZER("/workstation");
 
     private final String topicName;
 

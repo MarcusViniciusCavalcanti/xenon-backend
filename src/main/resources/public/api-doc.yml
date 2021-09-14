@@ -276,6 +276,16 @@ tags:
                 });
             });
       ```
+  - name: Recognizer
+    x-displayName: Reconhecimento
+    description: |-
+      Recurso reconhecimento é o recurso que representa um tentativa de acesso ao sistema Xenon, conterá
+      os dados que o dispositivo de reconhecimento de placa identificou, ou seja, uma placa válida.
+      Este reconhecimento será avaliado para conceber o acesso ou não.
+
+      Após receber o reconhecimento será vinculado a estação de trabalho, que originou o reconhecimento
+      da qual notificará pelo websocket da estação de trabalho o resultado.
+
 paths:
     # security
     /login/:
@@ -1300,6 +1310,182 @@ paths:
             $ref: '#/components/responses/InternalServerError'
 
 
+    #recogizer
+    /receive-recognizer/:
+      post:
+        summary: Envia um novo reconhecimento.
+        description: |-
+          ### Solicitação para recebe um novo Reconhecimento.
+
+          Regras para solicitação:
+          * Deve incluir a key que foi gerada para o dispositivo, na estação de trabalho
+          * Deve ser válida.
+
+          Retorno da solicitação é sem conteúdo
+
+
+          OBS: __Esta solicitação tratará os erros silenciosamente, em outras palavras não retornara erro,
+          este erro será salvo para ser observado posteriormente caso necessário __consulte a seção de
+          `receive-regonizer-error` para mais informações.__
+        tags:
+          - Recognizer
+        operationId: receiveRecognizer
+        parameters:
+          - in: path
+            name: key
+            required: true
+            description: Chave de autenticação do dispositivo.
+            schema:
+              type: string
+              example: auuytxbvcvnniioadfhhjaewv
+        requestBody:
+          required: true
+          description: Corpo da chama para receber novo reconhecimento
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InputRecognizer'
+        responses:
+          '204':
+            description: Reconhecimento recebido.
+    /all-recognizer/:
+      get:
+        summary: Retorna todos os reconhecimentos.
+        operationId: getAllRecognizers
+        tags:
+          - Recognizer
+        description: |-
+          ### Solicitação para receber todos os reconhecimentos.
+
+          Uma objeto de representação de página contento uma lista finita de Reconhecimentos,
+          recebidos pelo Xenon será retornado
+          nesta solicitação, a quantidade elementos e qual página deve ser retornada será informada
+          no query da url, caso as informações não forem informadas, a Api retornara com os valores
+          padrões:
+
+          * quantidade de elementos (size) 5
+          * página (page) 0, indicando que será a primeira página
+          * ordernada por dada de criação (sorted) createdAt
+          * ordenada do primeiro para o ultimo (sorteDirection) [DESC]
+
+          Regras da solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: query
+            name: size
+            description: |-
+              Quantidade de elementos exibidos por página, padrão 5 valor máximo 100, será retornado erro 400
+            schema:
+              maximum: 100
+              default: 5
+              type: integer
+          - in: query
+            name: page
+            description: número da página, lista inicia por 0, ou seja 0 retornara a primeira página
+            schema:
+              type: integer
+              default: 0
+          - in: query
+            name: sorted
+            description: |-
+              Valor padrão será `created` (data de criação), porém se informado e não corresponder a lista abaixo
+              o valor `created`  será utilizado.
+
+              propriedade que se deseja orderna, valores disponívels:
+              * driverName
+              * origin
+              * created
+            schema:
+              type: string
+              default: created
+          - in: query
+            name: direction
+            description: direção da ordenação
+            schema:
+              type: string
+              default: desc
+          - in: query
+            name: driverName
+            example: Fulano de tal
+            description: |-
+              filtra os elementos pelo nome do motorista vinculado, deve ser mencionado que uma vez
+              preenchido este filtro, reconhecimentos que Xenon não encontrou usuário vinculado, __NÃO SERÁ RETORNADO__
+              nesta consulta.
+            schema:
+              type: string
+          - in: query
+            name: onlyError
+            description: |-
+              Filtro para define se a resposta tera todos ou só com error
+
+              Por padrão o valor deste filtro é false (retornara todos os reconhecimentos)
+              `true` retornara apenas os reconhecimentos com error
+              `false` retornara todos os reconhecimentos.
+            schema:
+              type: boolean
+              default: false
+        responses:
+          '200':
+            $ref: '#/components/responses/RecognizerPageResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /error-recognizer/:
+      get:
+        summary: Error gerado quando um reconhecimento foi recebido.
+        operationId: errorRecognizer
+        tags:
+          - Recognizer
+        description: |-
+          ### Solicitação para receber erro no reconhecimentos.
+
+           Uma objeto de representação o erro gerado quando um processo de reconhecimentos fo gerado,
+
+           Regras da solicitação:
+           * Usuário deve estar autenticado no sistema;
+           * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: path
+            name: id
+            schema:
+              type: integer
+              format: int64
+              example: 10
+              description: Identificado do erro.
+        responses:
+          '200':
+            $ref: '#/components/responses/ErrorRecognizerResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+
+
 components:
   schemas:
     # Dtos
@@ -1495,8 +1681,116 @@ components:
           type: string
           description: Chave de comunicação para autorizar o dispositivo.
           example: HNjDjSdws5
+    Plates:
+      type: object
+      description: Dados do reconhecimento
+      properties:
+        plate:
+          type: string
+          description: Placa reconhecida
+          example: ABC-1234
+        confidence:
+          type: number
+          format: float
+          description: Valor de confidencialidade do reconhecimento
+          example: 89.01812
+    Recognizer:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador do reconhecimento.
+          example: 1
+        originIp:
+          type: string
+          description: Ip do dispositivo que originou o reconhecimento
+          example: 192.168.000.001
+        epochTime:
+          type: string
+          format: date-time
+          description: Momento no tempo que o reconhecimento foi gerado.
+          example: "2021-01-30T08:30:00Z"
+        plate:
+          type: string
+          description: Placa reconhecida
+          example: ABC-1234
+        confidence:
+          type: number
+          format: float
+          maxLength: 5
+          example: 89.01001
+        hasError:
+          type: boolean
+          description: Caso um erro de processo foi gerado
+          example: false
+        errorDetails:
+          type: integer
+          format: int64
+          description: |-
+            Caso um erro de processamento foi ocasionado no momento do reconhecimento, este campo será preenchido
+            indicando o id do error. Para consulta posterior.
+        accessGranted:
+          type: boolean
+          description: |-
+            Resultado do reconhecimento:
+              **TRUE** placa do carro foi identificado com sucesso à um usuário com acesso liberado
+              **FALSE** placa do carro foi identificado com sucesso porém não ouve usuário vinculado a placa ou o usuário não tem acesso liberado.
 
-      #Inputs
+            Para o segundo caso, deve-se verificar se os campos __driverName__ foi preenchida, caso sim
+            a placa foi vinculada a um usuário, entretando ele está com acesso removido.
+          example: true
+        driverName:
+          type: string
+          description: Nome do usuário vinculado a placa reconhecida
+          example: Fulano de Tal
+    PageRecognizer:
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Recognizer'
+    ErrorRecognizer:
+      type: object
+      properties:
+        errorMessage:
+          type: string
+          description: Message da causa do error.
+          example: Um erro aconteceu.
+        originIp:
+          type: string
+          description: Ip do dispositivo que envio o reconhecimento.
+          example: 192.168.000.001
+        workstationName:
+          type: string
+          description: Nome da estação de trabalho que o dispositivo que envio o reconhecimento com error
+          example: Portão 01
+        date:
+          type: string
+          format: date-time
+          description: Momento que o erro aconteceu.
+          example: "2021-01-30T08:30:00Z"
+        trace:
+          type: string
+          description: Stacktrace do error gerado
+          example: "Caused by: java.lang.NoClassDefFoundError: classError
+                    at com.fasterxml.jackson.dataformat.yaml.snakeyaml.error.MarkedYAMLException.from (MarkedYAMLException.java:27)
+                    at com.fasterxml.jackson.dataformat.yaml.YAMLParser.nextToken (YAMLParser.java:351)
+                    at com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeArray (JsonNodeDeserializer.java:431)
+                    at com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject (JsonNodeDeserializer.java:258)
+                    at com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject (JsonNodeDeserializer.java:255)
+                    at com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject (JsonNodeDeserializer.java:255)
+                    at com.fasterxml.jackson.databind.deser.std.BaseNodeDeserializer.deserializeObject (JsonNodeDeserializer.java:255)
+                    at com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize (JsonNodeDeserializer.java:68)
+                    at com.fasterxml.jackson.databind.deser.std.JsonNodeDeserializer.deserialize (JsonNodeDeserializer.java:15)
+                    at com.fasterxml.jackson.databind.ObjectMapper._readTreeAndClose (ObjectMapper.java:4044)
+                  "
+
+
+
+    #Inputs
     InputLogin:
       type: object
       required:
@@ -1768,6 +2062,16 @@ components:
             - MANUAL
           description: Modo de operação da estação de trabalho.
           example: MANUAL
+    InputRecognizer:
+      type: object
+      properties:
+        recognizers:
+          type: array
+          description: Resultados do reconhecimento.
+          items:
+            $ref: '#/components/schemas/Plates'
+
+
 
     # erros
     ErrorBase:
@@ -1914,7 +2218,18 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Workstation'
-
+    RecognizerPageResponse:
+      description: Retorno de uma página com recursos recognizer
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PageRecognizer'
+    ErrorRecognizerResponse:
+      description: Retorna um erro no processo do reconhecimento.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorRecognizer'
 
     # errors
     BadRequest:

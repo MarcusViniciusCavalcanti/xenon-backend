@@ -104,8 +104,9 @@ spring:
 # docs swagger configurations
 springdoc:
   api-docs:
-    enabled: false
+    enabled: true
+    path: /docs
   swagger-ui:
-    url: http://localhost:${server.port}${server.servlet.context-path}/api-doc.yml
-    path: /swagger-ui.html
+    url: /api/docs/
+    path: /swagger-ui
 
