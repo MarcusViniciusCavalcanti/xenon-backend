@@ -37,15 +37,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         "/login/**",
         "/request-renew-pass/**",
         "/new-students/registry/**",
+        "/receive-recognizer/**",
     };
     private static final String[] GET_URL_PUBLIC = new String[] {
         "/request-renew-pass/**",
         "/activate-registry/**",
-        "/swagger-ui/**",
-        "/docs/swagger-config/**",
-        "/v3/api-docs/swagger-config/**",
-        "/swagger-ui.html/**",
-        "/v3/docs",
         "/docs/**",
     };
 

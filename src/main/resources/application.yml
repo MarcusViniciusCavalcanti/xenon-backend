@@ -104,9 +104,5 @@ spring:
 # docs swagger configurations
 springdoc:
   api-docs:
-    enabled: true
-    path: /docs
-  swagger-ui:
-    url: /api/docs/
-    path: /swagger-ui
+    enabled: false
 

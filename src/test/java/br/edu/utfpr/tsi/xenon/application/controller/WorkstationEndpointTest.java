@@ -24,9 +24,11 @@ import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository;
 import java.util.Locale;
+import java.util.stream.IntStream;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.parallel.ResourceLock;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
@@ -111,6 +113,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
 
     @Test
     @DisplayName("Deve criar com sucesso")
+    @ResourceLock("br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository")
     void shouldHaveCriarWorkstation() {
         var user = createAdmin();
         var input = new InputLoginDto()
@@ -146,6 +149,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
 
     @Test
     @DisplayName("Deve atualizar workstation com sucesso")
+    @ResourceLock("br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository")
     void shouldHaveUpdateWorkstation() {
         var user = createAdmin();
         var input = new InputLoginDto()
@@ -199,6 +203,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
 
     @Test
     @DisplayName("Deve deletar workstation com sucesso")
+    @ResourceLock("br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository")
     void shouldHaveDeleteWorkstation() {
         var user = createAdmin();
         var input = new InputLoginDto()
@@ -228,6 +233,44 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
 
         assertTrue(workstationRepository.findById(workstation.getId()).isEmpty());
         deleteUser(user);
+    }
+
+    @Test
+    @DisplayName("Deve retornar lista de Estações de Trabalho")
+    void shouldReturnListWorkstation() {
+        var user = createAdmin();
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        var workstation = new WorkstationEntity();
+        workstation.setMode(ModeEnum.NONE.name());
+        workstation.setName(faker.name().name());
+        workstation.setIp(faker.internet().ipV4Address());
+        workstation.setPort(9090);
+        workstation.setKey("key");
+
+        workstationRepository.saveAndFlush(workstation);
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .contentType(JSON)
+            .expect()
+            .statusCode(OK.value())
+            .body("[0].id", is(workstation.getId().intValue()))
+            .body("[0].name", is(workstation.getName()))
+            .body("[0].ip", is(workstation.getIp()))
+            .body("[0].mode", is(workstation.getMode()))
+            .body("[0].port", is(workstation.getPort()))
+            .body("[0].key", is(workstation.getKey()))
+            .when()
+            .get(URL_WORKSTATION);
+
+        deleteUser(user);
+        workstationRepository.deleteAll();
     }
 
     private void assertForbidden(Locale locale, String message, String s) {

@@ -13,7 +13,7 @@ import lombok.Data;
 @Entity
 @Table(name = "error_recognizer")
 @Data
-public class ErrorRecognizer {
+public class ErrorRecognizerEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -30,6 +30,9 @@ public class ErrorRecognizer {
 
     @Column(name = "date")
     private LocalDateTime date;
+
+    @Column(name = "input")
+    private String input;
 
     @Lob
     private String trace;

@@ -236,14 +236,14 @@ tags:
       * `/topic/change-workstation/{id}` para receber atualiações, um objeto como o exemplo abaixo será enviado:
       ```
       {
-        "type": "UPDATE",
-        "workstation": {
-          "id": 1,
-          "name": "Portão 10",
-          "ip": "192.168.001.002",
-          "mode": "MANUAL",
-          "port": 9090
-        }
+          "type": "UPDATE",
+          "workstation": {
+            "id": 1,
+            "name": "Portão 10",
+            "ip": "192.168.001.002",
+            "mode": "MANUAL",
+            "port": 9090
+          }
       }
       ```
 
@@ -251,14 +251,21 @@ tags:
       * __UPDATE__ atualização da estação de trabalho.
       * __DELETE__ a estação de trabalho foi removida.
 
+
       * `/topic/workstation/{id}/recognize` para receber reconhecimentos, um objeto como exemplo abaixo será enviado:
       ```
       {
-
+          "confidence": 92.01182,
+          "driverName: "Fulano de tal",
+          "identifier": true,
+          "modelCar": "Gol",
+          "plate": "UTB-0010",
+          "userAvatar": "https://avatar.com.br/user.png"
       }
       ```
 
       __EXEMPLO DE CÓDIGO__
+
       ```javascript
             const headerName = 'Authorization';
             const token = 'Bearer <token>';
@@ -266,11 +273,9 @@ tags:
             const headers = {};
             headers[headerName] = token;
 
-            const socket = new SockJS(`https://xeono:8080/api/ws`);
+            const socket = new SockJS(`https://www.xenon:8080/api/ws`);
             stomp = Stomp.over(socket);
-            stomp.connect({"Authorization": token}, function(frame){
-                console.log(frame)
-
+            stomp.connect(headers, function(frame) {
                 stomp.subscribe('/topic/change-workstation/1', function(messageOutput) {
                     console.log("New Message: "+ messageOutput);
                 });
@@ -386,7 +391,7 @@ paths:
             name: params
             schema:
               type: string
-              example: ?params=YWFhYWE=
+              example: YWFhYWE=
         responses:
           '202':
             $ref: '#/components/responses/ConfirmRenewPassResponse'
@@ -460,7 +465,7 @@ paths:
             name: params
             schema:
               type: string
-              example: ?params=YWFhYWE=
+              example: YWFhYWE=
         responses:
           '202':
             $ref: '#/components/responses/ActiveAccountSuccessResponse'
@@ -1814,6 +1819,9 @@ components:
           type: string
           example: email@email.com.br
           pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+          minimum: 5
+          maximum: 255
+          nullable: false
     InputRegistryStudent:
       required:
         - email
@@ -1828,15 +1836,21 @@ components:
           type: string
           example: aluno@alunos.utfpr.edu.br
           pattern: ^[A-Za-z0-9._%+-]+@alunos.utfpr.edu.br$
+          nullable: false
+          maxLength: 255
         name:
           description: nome do aluno
           type: string
           minimum: 10
           maximum: 255
           example: Fulano de Tal
+          nullable: false
+          minLength: 5
+          maxLength: 255
         password:
           description: Senha da credencial do usuário
           type: string
+          nullable: false
           minimum: 5
           maximum: 8
         confirmPassword:
@@ -1844,16 +1858,21 @@ components:
           type: string
           minimum: 5
           maximum: 8
+          nullable: false
         modelCar:
           description: Modelo do carro, este campo é opcional.
           type: string
           maximum: 15
           minimum: 3
           example: Gol 1.0
+          nullable: false
         plateCar:
           description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
           type: string
           pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
+          nullable: false
+          minLength: 7
+          maxLength: 8
     InputNameUser:
       type: object
       required:
@@ -1863,6 +1882,9 @@ components:
           type: string
           description: nome do usuário a ser alterado
           example: Fulano de tal
+          nullable: false
+          minLength: 5
+          maxLength: 255
     InputNewCar:
       type: object
       required:
@@ -1878,6 +1900,9 @@ components:
           description: placa do carro, placas no formato mercosu são aceitas
           pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
           example: ABC-1A34
+          minLength: 7
+          maxLength: 8
+          nullable: false
     InputChangePassword:
       type: object
       required:
@@ -1889,18 +1914,23 @@ components:
           type: string
           description: Senha atual, utilizada para acessar o sistema Xenon
           example: 12345678
-          minimum: 8
-          maximum: 16
+          minLength: 8
+          maxLength: 16
+          nullable: false
         password:
           type: string
           description: Nova senha
           example: 87654321
           minimum: 8
           maximum: 16
+          nullable: false
         confirmPassword:
           type: string
           description: Confirmação da senha.
           example: 87654321
+          minLength: 8
+          maxLength: 16
+          nullable: false
     InputRemoveCar:
       type: object
       required:
@@ -1911,6 +1941,9 @@ components:
           description: placa do carro que será removido
           pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
           example: ABC-1A34
+          minLength: 7
+          maxLength: 8
+          nullable: false
     InputUser:
       required:
         - email
@@ -1923,15 +1956,20 @@ components:
           example: email@email.com.br
           type: string
           pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+          nullable: false
+          minLength: 5
+          maxLength: 255
         name:
           description: nome do usuário
           example: Fulano de Tal
           type: string
           minimum: 10
           maximum: 255
+          nullable: false
         typeUser:
           type: string
           example: SERVICE
+          nullable: false
           enum:
             - STUDENTS
             - SPEAKER
@@ -1949,6 +1987,7 @@ components:
           minItems: 1
           description: papeis do usuário
           example: [1,2,3]
+          uniqueItems: true
         enabled:
           type: boolean
           description: define se a conta do usuário está ativa ou não
@@ -1961,11 +2000,17 @@ components:
           type: string
           description: Modelo do carro
           example: Gol 1.0
+          minLength: 5
+          maxLength: 255
+          nullable: true
         plateCar:
           type: string
           description: placa do carro, placas no formato mercosu são aceitas
           pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
           example: ABC-1A34
+          minLength: 7
+          maxLength: 8
+          nullable: true
     InputUpdateUser:
       required:
         - email
@@ -1978,15 +2023,20 @@ components:
           example: email@email.com.br
           type: string
           pattern: ^(?=.{1,64}@)[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*@[^-][A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*(\.[A-Za-z]{2,})$
+          nullable: false
+          minLength: 5
+          minimum: 255
         name:
           description: nome do usuário
           example: Fulano de Tal
           type: string
           minimum: 10
           maximum: 255
+          nullable: false
         typeUser:
           type: string
           example: SERVICE
+          nullable: false
           enum:
             - STUDENTS
             - SPEAKER
@@ -2004,6 +2054,7 @@ components:
           minItems: 1
           description: papeis do usuário
           example: [ 1,2,3 ]
+          uniqueItems: true
         enabled:
           type: boolean
           description: define se a conta do usuário está ativa ou não
@@ -2031,6 +2082,9 @@ components:
           type: string
           description: motivo da ação
           example: motivo da ação que originou.
+          nullable: false
+          minLength: 5
+          maxLength: 255
     InputWorkstation:
       type: object
       required:
@@ -2044,16 +2098,20 @@ components:
           pattern: ((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))
           description: ip que será vinculado ao dispositivo, IPV6 está disponível.
           example: 192.168.1.1
+          nullable: false
+          maxLength: 50
         port:
           type: integer
           description: porta de acesso do dispostivo.
           example: 9090
+          nullable: false
         name:
           type: string
           description: Nome da estação de trabalho
           maximum: 50
           minimum: 5
           example: Portão 01
+          nullable: false
         mode:
           type: string
           enum:
@@ -2062,6 +2120,7 @@ components:
             - MANUAL
           description: Modo de operação da estação de trabalho.
           example: MANUAL
+          nullable: false
     InputRecognizer:
       type: object
       properties:

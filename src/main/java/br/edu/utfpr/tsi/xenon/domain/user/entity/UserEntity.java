@@ -68,7 +68,9 @@ public class UserEntity {
     }
 
     public CarEntity lastCar() {
-        return car.isEmpty() ? null : car.get(car.size() - 1);
+        return car.stream()
+            .reduce((first, second) -> second)
+            .orElse(new CarEntity());
     }
 
     public void includeLastCar(CarEntity carEntity) {

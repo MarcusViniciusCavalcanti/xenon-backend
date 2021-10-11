@@ -26,7 +26,7 @@ xenon:
         expiration: 3600
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
-      domain: http://localhost:8080/api
+      domain: http://localhost:3000
 
 spring:
   jpa:

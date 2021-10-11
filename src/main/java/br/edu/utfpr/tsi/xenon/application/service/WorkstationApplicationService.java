@@ -38,7 +38,7 @@ public class WorkstationApplicationService {
     private final SendingMessageService senderMessageWebSocketService;
 
     @Transactional
-    @CacheEvict(cacheNames = "Workstation", allEntries = true)
+    @CacheEvict(cacheNames = {"Workstations", "Workstation", "WorkstationDto"}, allEntries = true)
     public WorkstationDto createNew(InputWorkstationDto input) {
         log.info("Iniciando processo de criação de workstation.");
         log.debug("Iniciando processo de criação de workstation. input: {}", input);
@@ -53,7 +53,7 @@ public class WorkstationApplicationService {
     }
 
     @Transactional
-    @CachePut(cacheNames = "Workstation", key = "#id")
+    @CachePut(cacheNames = "WorkstationDto", key = "#id")
     public WorkstationDto update(InputWorkstationDto input, Long id) {
         log.info("Iniciando processo de atualização de workstation de id: {}", id);
         log.info("Iniciando processo de atualização de workstation de id: {}, input:{}", id, input);
@@ -93,7 +93,7 @@ public class WorkstationApplicationService {
     }
 
     @Transactional
-    @CacheEvict(cacheNames = "Workstation", allEntries = true)
+    @CacheEvict(cacheNames = {"Workstations", "Workstation", "WorkstationDto"}, allEntries = true)
     public void delete(Long id) {
         log.info("Iniciando processo para remover um workstation de id: {}", id);
         var workstation = getById(id);
@@ -111,7 +111,7 @@ public class WorkstationApplicationService {
     }
 
     @Transactional
-    @Cacheable(cacheNames = "Workstation", unless = "#result.isEmpty()")
+    @Cacheable(cacheNames = "Workstations", unless = "#result.isEmpty()")
     public List<WorkstationDto> getAll() {
         return workstationRepository.findAll().stream()
             .map(this::buildDto)

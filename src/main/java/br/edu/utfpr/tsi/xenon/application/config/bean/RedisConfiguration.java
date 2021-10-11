@@ -7,6 +7,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.CarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
+import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
 import java.util.ArrayList;
@@ -66,16 +67,24 @@ public class RedisConfiguration {
         return builder -> {
             var pageUser = new Jackson2JsonRedisSerializer<>(PageUserDto.class);
             pageUser.setObjectMapper(objectMapper);
+
             var workstationListType = objectMapper.getTypeFactory()
                 .constructCollectionType(ArrayList.class, WorkstationDto.class);
-            var workstation = new Jackson2JsonRedisSerializer<>(workstationListType);
-            workstation.setObjectMapper(objectMapper);
+
+            var workstations = new Jackson2JsonRedisSerializer<>(workstationListType);
+            workstations.setObjectMapper(objectMapper);
 
             var user = new Jackson2JsonRedisSerializer<>(UserDto.class);
             user.setObjectMapper(objectMapper);
 
             var car = new Jackson2JsonRedisSerializer<>(CarDto.class);
             car.setObjectMapper(objectMapper);
+
+            var workstation = new Jackson2JsonRedisSerializer<>(WorkstationEntity.class);
+            workstation.setObjectMapper(objectMapper);
+
+            var workstationDto = new Jackson2JsonRedisSerializer<>(WorkstationDto.class);
+            workstationDto.setObjectMapper(objectMapper);
 
             builder
                 .withCacheConfiguration("User",
@@ -86,10 +95,18 @@ public class RedisConfiguration {
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(1))
                         .serializeValuesWith(SerializationPair.fromSerializer(pageUser)))
+                .withCacheConfiguration("Workstations",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofHours(1))
+                        .serializeValuesWith(SerializationPair.fromSerializer(workstations)))
                 .withCacheConfiguration("Workstation",
                     RedisCacheConfiguration.defaultCacheConfig()
-                        .entryTtl(Duration.ofMinutes(10))
+                        .entryTtl(Duration.ofHours(1))
                         .serializeValuesWith(SerializationPair.fromSerializer(workstation)))
+                .withCacheConfiguration("WorkstationDto",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofHours(1))
+                        .serializeValuesWith(SerializationPair.fromSerializer(workstationDto)))
                 .withCacheConfiguration("Car",
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(10))

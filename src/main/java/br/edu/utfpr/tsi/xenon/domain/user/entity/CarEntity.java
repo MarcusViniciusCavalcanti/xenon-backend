@@ -46,6 +46,9 @@ public class CarEntity {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "authorised_access")
+    private Boolean authorisedAccess = Boolean.FALSE;
+
     @PrePersist
     private void newCar() {
         createdAt = LocalDateTime.now();

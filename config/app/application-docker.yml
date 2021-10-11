@@ -9,7 +9,7 @@ xenon:
       avatarUrl: avatar
       docUrl:
     redis:
-      host: 127.0.0.1
+      host: redis
       port: 6379
     email:
       host: smtp.mailtrap.io
@@ -27,3 +27,8 @@ xenon:
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
       domain: http://localhost:8080/api
+
+spring:
+  jpa:
+    show-sql: true
+    generate-ddl: true

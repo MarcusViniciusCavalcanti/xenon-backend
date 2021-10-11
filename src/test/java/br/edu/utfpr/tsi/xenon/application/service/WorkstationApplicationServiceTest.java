@@ -6,6 +6,7 @@ import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.never;
@@ -20,9 +21,11 @@ import br.edu.utfpr.tsi.xenon.domain.notification.service.SendingMessageService;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
+import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository;
 import com.github.javafaker.Faker;
+import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -286,5 +289,21 @@ class WorkstationApplicationServiceTest {
         verify(senderMessageWebSocketService).sendBeforeTransactionCommit(
             any(UpdateWorkstationMessage.class),
             eq(CHANGE_WORKSTATION.topicTo(workstation.getId().toString())));
+    }
+
+    @Test
+    @DisplayName("Deve lista de Dtos de estações de trabalho")
+    void shouldReturnListDtos() {
+        when(workstationRepository.findAll()).thenReturn(List.of());
+        workstationApplicationService.getAll();
+        verify(workstationRepository).findAll();
+    }
+
+    @Test
+    @DisplayName("Deve lista de Dtos de estações de trabalho")
+    void shouldThrowsResourceNotFoundListDtos() {
+        when(workstationRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(ResourceNotFoundException.class, () -> workstationApplicationService.delete(1L));
+        verify(workstationRepository).findById(1L);
     }
 }

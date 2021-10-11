@@ -2,8 +2,11 @@ package br.edu.utfpr.tsi.xenon.application.handler;
 
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.ACCESS_DENIED;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.ARGUMENT_INVALID;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_INVALID;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_NOT_INSTITUTIONAL;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.KNOWN;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.MEDIA_TYPE_NOT_SUPPORTED;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.REQUEST_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.REQUEST_METHOD_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.RESOURCE_NOT_FOUND;
@@ -30,12 +33,14 @@ import br.edu.utfpr.tsi.xenon.structure.exception.RegistryUserException;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Locale;
+import java.util.Objects;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
 import javax.validation.Path;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.data.util.StreamUtils;
 import org.springframework.http.HttpStatus;
@@ -43,6 +48,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -113,7 +119,13 @@ public class HandlerError implements EndpointsTranslator {
         var errorsDetails = exception.getFieldErrors().stream()
             .map(error -> {
                 var field = error.getField();
-                var msg = error.getDefaultMessage();
+                var msg = StringUtils.EMPTY;
+
+                if (StringUtils.equalsIgnoreCase(error.getCode(), "pattern")) {
+                    msg = checkCase(error, request.getLocale());
+                } else {
+                    msg = StringUtils.defaultString(error.getDefaultMessage(), StringUtils.EMPTY);
+                }
 
                 return new ErrorDetailsDto()
                     .descriptionError(msg)
@@ -301,5 +313,26 @@ public class HandlerError implements EndpointsTranslator {
     private String fieldNameFromPropertyPath(Path path) {
         var list = StreamUtils.createStreamFromIterator(path.iterator()).toList();
         return list.get(list.size() - 1).getName();
+    }
+
+    private String checkCase(FieldError error, Locale locale) {
+        return switch (error.getField()) {
+            case "email" -> getMsgError(error, locale);
+            case "plateCar" -> getMessage(
+                PLATE_INVALID.getCode(),
+                locale,
+                String.valueOf(error.getRejectedValue()));
+            default -> getMessage(KNOWN.getCode(), locale);
+        };
+    }
+
+    private String getMsgError(FieldError error, Locale locale) {
+        var email = String.valueOf(error.getRejectedValue());
+        if (Objects.requireNonNull(error.getDefaultMessage()).endsWith("@alunos.utfpr.edu.br$\"")
+            && !email.endsWith("@alunos.utfpr.edu.br")) {
+            return getMessage(EMAIL_NOT_INSTITUTIONAL.getCode(), locale, email);
+        } else {
+            return getMessage(EMAIL_INVALID.getCode(), locale, email);
+        }
     }
 }

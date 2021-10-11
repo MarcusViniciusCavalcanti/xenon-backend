@@ -176,6 +176,44 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
     }
 
     @Test
+    @DisplayName("Deve retornar erro que placa é invalida")
+    void shouldReturnErrorPlatIsInvalid() {
+        var email = faker.bothify("plate-invalid-####@alunos.utfpr.edu.br");
+        var pass = faker.regexify("????????");
+        var plateCar = faker.bothify("??#-####", Boolean.TRUE);
+        var modelCar = faker.rockBand().name();
+        var input = new InputRegistryStudentDto()
+            .email(email)
+            .name(faker.name().fullName())
+            .password(pass)
+            .confirmPassword(pass)
+            .modelCar(modelCar)
+            .plateCar(plateCar);
+
+        var message = messageSource
+            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+
+        var descriptionError = messageSource
+            .getMessage(MessagesMapper.PLATE_INVALID.getCode(),
+                new String[] {input.getPlateCar()}, Locale.getDefault());
+
+        given()
+            .port(port)
+            .accept(APPLICATION_JSON_VALUE)
+            .contentType(JSON)
+            .header("Accept-Language", Locale.getDefault().getLanguage())
+            .body(input, JACKSON_2)
+            .expect()
+            .statusCode(BAD_REQUEST.value())
+            .body("message", is(message))
+            .body("statusCode", is(BAD_REQUEST.value()))
+            .body("details.findAll { it }.field", hasItems("plateCar"))
+            .body("details.findAll { it }.descriptionError", hasItems(descriptionError))
+            .when()
+            .post(URL_REGISTRY);
+    }
+
+    @Test
     @DisplayName("Deve retornar error quando e-mail já está em uso")
     @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository")
     void shouldReturnErrorWhenEmailExist() {
@@ -217,6 +255,80 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
     }
 
     @Test
+    @DisplayName("Deve retornar error quando e-mail não institucional @alunos.utfpr.edu.br")
+    void shouldReturnErrorWhenEmailNotInstitutional() {
+        var email = faker.internet().emailAddress();
+        var pass = faker.internet().password();
+        var input = new InputRegistryStudentDto()
+            .email(email)
+            .name(faker.name().fullName())
+            .password(pass)
+            .confirmPassword(pass)
+            .modelCar(faker.rockBand().name())
+            .plateCar(faker.bothify("???-####", Boolean.TRUE));
+
+        var message = messageSource
+            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+
+       var descriptionError = messageSource
+            .getMessage(MessagesMapper.EMAIL_NOT_INSTITUTIONAL.getCode(),
+                new String[] {input.getEmail()}, Locale.getDefault());
+
+        given()
+            .port(port)
+            .accept(APPLICATION_JSON_VALUE)
+            .contentType(JSON)
+            .header("Accept-Language", Locale.getDefault().getLanguage())
+            .body(input, JACKSON_2)
+            .expect()
+            .statusCode(BAD_REQUEST.value())
+            .body("message", is(message))
+            .body("statusCode", is(BAD_REQUEST.value()))
+            .body("path", is("/new-students/registry"))
+            .body("details.findAll { it }.field", hasItems("email"))
+            .body("details.findAll { it }.descriptionError", hasItems(descriptionError))
+            .when()
+            .post(URL_REGISTRY);
+    }
+
+    @Test
+    @DisplayName("Deve retornar error quando e-mail é invalido")
+    void shouldReturnErrorWhenEmailIsInvalid() {
+        var email = "email**@alunos.utfpr.edu.br";
+        var pass = faker.internet().password();
+        var input = new InputRegistryStudentDto()
+            .email(email)
+            .name(faker.name().fullName())
+            .password(pass)
+            .confirmPassword(pass)
+            .modelCar(faker.rockBand().name())
+            .plateCar(faker.bothify("???-####", Boolean.TRUE));
+
+        var message = messageSource
+            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+
+        var descriptionError = messageSource
+            .getMessage(MessagesMapper.EMAIL_INVALID.getCode(),
+                new String[] {input.getEmail()}, Locale.getDefault());
+
+        given()
+            .port(port)
+            .accept(APPLICATION_JSON_VALUE)
+            .contentType(JSON)
+            .header("Accept-Language", Locale.getDefault().getLanguage())
+            .body(input, JACKSON_2)
+            .expect()
+            .statusCode(BAD_REQUEST.value())
+            .body("message", is(message))
+            .body("statusCode", is(BAD_REQUEST.value()))
+            .body("path", is("/new-students/registry"))
+            .body("details.findAll { it }.field", hasItems("email"))
+            .body("details.findAll { it }.descriptionError", hasItems(descriptionError))
+            .when()
+            .post(URL_REGISTRY);
+    }
+
+    @Test
     @DisplayName("Deve ativar conta")
     @ResourceLocks(value = {
         @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.UserRepository"),
@@ -241,6 +353,7 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
         accessCard.setUsername(email);
         accessCard.setUser(user);
 
+        //noinspection OptionalGetWithoutIsPresent
         var roles = roleRepository.findById(1L).get();
         accessCard.setRoleEntities(List.of(roles));
         user.setAccessCard(accessCard);
@@ -267,6 +380,7 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .when()
             .get(URL_ACTIVE);
 
+        //noinspection OptionalGetWithoutIsPresent
         var userUpdated = userRepository.findById(userSaved.getId()).get();
         assertTrue(userUpdated.getAccessCard().isEnabled());
         assertTrue(userUpdated.getAuthorisedAccess());

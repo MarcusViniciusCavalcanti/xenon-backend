@@ -22,7 +22,7 @@ services:
       - 6379
   api:
     container_name: xenon_api
-    image: cavalcanti16/xenon-backend:0.0.1
+    image: cavalcanti16/xenon-backend:0.0.4
     user: application
     depends_on:
       - postgres
@@ -32,7 +32,7 @@ services:
     expose:
       - 8080
     volumes:
-    - ./config:/backend/config
+    - ./config/app/:/backend/config
 
 volumes:
   config:

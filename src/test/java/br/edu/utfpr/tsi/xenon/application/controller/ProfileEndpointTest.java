@@ -223,7 +223,6 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .delete(URL_REMOVE_CAR);
 
         var cars = carRepository.findByUser(user);
-
         assertFalse(cars.stream().anyMatch(carEntity -> carEntity.getPlate().equals(inputRemoveCar.getPlate())));
 
         deleteUser(user);

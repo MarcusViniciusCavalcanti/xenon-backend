@@ -1,5 +1,6 @@
 package br.edu.utfpr.tsi.xenon.application.handler;
 
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.*;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.ARGUMENT_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_EXIST;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.KNOWN;
@@ -9,17 +10,21 @@ import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.REQUEST_METHOD_INV
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.RESOURCE_NOT_FOUND;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.URL_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
+import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 import br.edu.utfpr.tsi.xenon.application.dto.ErrorDto;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.RegistryUserException;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
+import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
@@ -76,6 +81,29 @@ class HandlerErrorTest {
         assertEquals(fieldError.getField(), error.getDetails().get(0).getField());
         assertEquals(fieldError.getDefaultMessage(),
             error.getDetails().get(0).getDescriptionError());
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro com mensagem em branco quando MethodArgumentNotValidException")
+    void shouldReturnBadRequestWhenMethodArgumentNotValidExceptionWithMsgEmpty() {
+        var exception = mock(MethodArgumentNotValidException.class);
+
+        when(exception.getFieldErrors()).thenReturn(List.of());
+        when(request.getServletPath()).thenReturn("path");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
+        when(messageSource
+            .getMessage(eq(ARGUMENT_INVALID.getCode()), any(String[].class), any(Locale.class)))
+            .thenReturn("message");
+
+        var result = handlerError.methodArgumentNotValidException(exception, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        var error = (ErrorDto) result.getBody();
+        assert error != null;
+        assertEquals("message", error.getMessage());
+        assertEquals("path", error.getPath());
+        assertEquals(400, error.getStatusCode());
+        assertTrue(error.getDetails().isEmpty());
     }
 
     @Test
@@ -210,7 +238,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando HttpMediaTypeNotSupportedException")
     void shouldReturnRegistryUserException() {
-        var exception =new RegistryUserException(MessagesMapper.EMAIL_EXIST.getCode());
+        var exception =new RegistryUserException(EMAIL_EXIST.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -231,7 +259,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando HttpMediaTypeNotSupportedException")
     void shouldReturnException() {
-        var exception =new Exception(MessagesMapper.EMAIL_EXIST.getCode());
+        var exception =new Exception(EMAIL_EXIST.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -252,7 +280,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando RuntimeException")
     void shouldReturnRuntimeException() {
-        var exception =new RuntimeException(MessagesMapper.EMAIL_EXIST.getCode());
+        var exception =new RuntimeException(KNOWN.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -269,4 +297,27 @@ class HandlerErrorTest {
         assertEquals("path", error.getPath());
         assertEquals(500, error.getStatusCode());
     }
+
+    @Test
+    @DisplayName("Deve retornar erro quando WorkStationException")
+    void shouldReturnWorkStationException() {
+        var exception = new WorkStationException(IP_WORKSTATION_EXIST.getCode(), "value");
+
+        when(request.getServletPath()).thenReturn("path");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
+        when(messageSource
+            .getMessage(eq(IP_WORKSTATION_EXIST.getCode()), any(String[].class), any(Locale.class)))
+            .thenReturn("message");
+
+        var result = handlerError.workstationException(exception, request);
+
+        assertEquals(UNPROCESSABLE_ENTITY, result.getStatusCode());
+        var error = (ErrorDto) result.getBody();
+        assert error != null;
+        assertEquals("message", error.getMessage());
+        assertEquals("path", error.getPath());
+        assertEquals(422, error.getStatusCode());
+    }
+
+
 }
