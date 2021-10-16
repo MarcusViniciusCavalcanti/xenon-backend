@@ -79,7 +79,7 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", Locale.forLanguageTag("pt_BR"))
+            .header("Accept-Language", Locale.forLanguageTag("en-US"))
             .contentType(JSON)
             .body(input, JACKSON_2)
             .expect()
@@ -100,14 +100,14 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
     void shouldReturnErrorBadRequest() {
         var message =
             messageSource.getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null,
-                Locale.forLanguageTag("pt_BR"));
+                Locale.forLanguageTag("en-US"));
 
         var input = new InputRegistryStudentDto();
 
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", Locale.forLanguageTag("pt_BR"))
+            .header("Accept-Language", Locale.forLanguageTag("en-US"))
             .contentType(JSON)
             .body(input, JACKSON_2)
             .expect()

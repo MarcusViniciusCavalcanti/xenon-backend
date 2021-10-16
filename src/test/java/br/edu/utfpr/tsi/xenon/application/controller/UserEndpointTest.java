@@ -64,7 +64,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar Unauthorized quando usuário tiver papel de motorista")
     void shouldReturnUnauthorizedWhenUserIsDriveRole() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ACCESS_DENIED.getCode(), null, locale);
 
         var user = createDriver();
@@ -90,7 +90,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar Unauthorized quando usuário tiver papel de operador")
     void shouldReturnUnauthorizedWhenUserIsOperatorRole() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ACCESS_DENIED.getCode(), null, locale);
 
         var user = createOperator();
@@ -115,7 +115,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar erro de bad request para criar quando campos estão inválidos")
     void shouldReturnBadRequestInCreateWhenFieldsInvalid() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.US;
         var message = messageSource.getMessage(ARGUMENT_INVALID.getCode(), null, locale);
 
         var user = createAdmin();
@@ -140,8 +140,7 @@ class UserEndpointTest extends AbstractSecurityContext {
                 "email", "name", "typeUser", "roles")
             )
             .body("details.findAll { it }.descriptionError", hasItems(
-                "não deve ser nulo", "não deve ser nulo", "tamanho deve ser entre 1 e 3",
-                "não deve ser nulo")
+                "size must be between 1 and 3", "must not be null", "must not be null", "must not be null")
             )
             .when()
             .post(URL_USER);
@@ -152,7 +151,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve criar usuário com sucesso")
     void shouldHaveCreateUserSuccessfully() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
 
         var user = createAdmin();
         var input = new InputLoginDto()
@@ -195,7 +194,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar erro de bad request para atualizar quando campos estão inválidos")
     void shouldReturnBadRequestInUpdateWhenFieldsInvalid() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.US;
         var message = messageSource.getMessage(ARGUMENT_INVALID.getCode(), null, locale);
 
         var user = createAdmin();
@@ -221,8 +220,7 @@ class UserEndpointTest extends AbstractSecurityContext {
                 "email", "name", "typeUser", "roles")
             )
             .body("details.findAll { it }.descriptionError", hasItems(
-                "não deve ser nulo", "não deve ser nulo", "tamanho deve ser entre 1 e 3",
-                "não deve ser nulo")
+                "must not be null", "must not be null", "size must be between 1 and 3", "must not be null")
             )
             .when()
             .put(URL_USER_WITH_ID);
@@ -233,7 +231,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve atualizar usuário com sucesso")
     void shouldHaveUpdateUserSuccessfully() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var user = createAdmin();
         var userToUpdate = createDriver();
         var disabledReason = "disabled";
@@ -297,7 +295,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar uma objeto page com usuários")
     void shouldReturnPageUser() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         setupDatabase();
         var user = createAdmin();
         var input = new InputLoginDto()
@@ -336,7 +334,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar erro que o valor de limite de elementos exibido")
     void shouldReturnErroSize() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ARGUMENT_INVALID.getCode(), null, locale);
         var user = createAdmin();
 
@@ -363,7 +361,7 @@ class UserEndpointTest extends AbstractSecurityContext {
             .body("message", is(message))
             .body("path", is("/users/all"))
             .body("details.findAll { it }.field", hasItems("size"))
-            .body("details.findAll { it }.descriptionError", hasItems("deve ser menor que ou igual à 100"))
+            .body("details.findAll { it }.descriptionError", hasItems("must be less than or equal to 100"))
             .when()
             .get(URL_USER_ALL);
 
@@ -409,7 +407,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve desativar conta do usuário")
     void shouldHaveDisableAccountUser() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(USER_ACCOUNT_DEACTIVATED.getCode(), null, locale);
         var reason = "Usuário removido";
 
@@ -451,7 +449,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve remover autorização do usuário")
     void shouldHaveRemoveAuthorizationUser() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(REMOVE_AUTHORIZATION_ACCESS.getCode(), null, locale);
         var reason = "Usuário removendo autorização";
 
@@ -493,7 +491,7 @@ class UserEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve remover autorização do usuário")
     void shouldHaveAddAuthorizationUser() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ADD_AUTHORIZATION_ACCESS.getCode(), null, locale);
         var reason = "Usuário autorização";
 

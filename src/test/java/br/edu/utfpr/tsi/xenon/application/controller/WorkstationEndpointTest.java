@@ -44,7 +44,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar Unauthorized quando usuário tiver papel de motorista")
     void shouldReturnErroForbiddenUserDriver() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ACCESS_DENIED.getCode(), null, locale);
 
         var user = createDriver();
@@ -61,7 +61,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar Unauthorized quando usuário tiver papel de motorista")
     void shouldReturnErroForbiddenUserOperator() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ACCESS_DENIED.getCode(), null, locale);
 
         var user = createOperator();
@@ -78,7 +78,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
     @Test
     @DisplayName("Deve retornar bad request quando corpo da chamada está inválido")
     void shouldReturnBadRequest() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage(ARGUMENT_INVALID.getCode(), null, locale);
 
         var user = createAdmin();
@@ -93,7 +93,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
             .contentType(MediaType.APPLICATION_JSON_VALUE)
             .header("Accept-Language", locale)
             .contentType(JSON)
-            .body(new InputWorkstationDto().ip("anyIp"), JACKSON_2)
+            .body(new InputWorkstationDto(), JACKSON_2)
             .expect()
             .statusCode(BAD_REQUEST.value())
             .body("message", is(message))
@@ -103,7 +103,7 @@ class WorkstationEndpointTest extends AbstractSecurityContext {
                 "ip", "name", "mode")
             )
             .body("details.findAll { it }.descriptionError", hasItems(
-                "não deve ser nulo", "não deve ser nulo", "não deve ser nulo")
+                "must not be null", "must not be null", "must not be null", "must not be null")
             )
             .when()
             .post(URL_WORKSTATION);

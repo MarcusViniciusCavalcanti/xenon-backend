@@ -43,7 +43,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando usuário não encontrado")
     void shouldReturnError() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage("ERROR-011", null, locale);
         var input = new InputLoginDto()
             .password("abc123")
@@ -66,7 +66,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando corpo da requisição está vázio")
     void shouldReturnErrorBadRequest() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage("ERROR-011", null, locale);
         var input = new InputLoginDto()
             .password("")
@@ -89,7 +89,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando corpo da requisição está vázio")
     void shouldReturnErrorBadRequestInputNull() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var message = messageSource.getMessage("ERROR-001", null, locale);
 
         given()
@@ -116,7 +116,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve logar com sucesso")
     void shouldHaveLoginSuccess() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var email = faker.internet().emailAddress();
         var user = new UserEntity();
         user.setName(faker.name().fullName());
@@ -155,7 +155,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar sucesso de pedido de processo de renovação de senha")
     void shouldHaveStartRenewPassword() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var input = new InputRenewPasswordDto()
             .email(faker.internet().emailAddress());
 
@@ -174,7 +174,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar sucesso de pedido de processo de renovação de senha")
     void shouldHaveCompleteRenewPassword() {
-        var locale = Locale.forLanguageTag("pt_BR");
+        var locale = Locale.forLanguageTag("en-US");
         var input = new InputRenewPasswordDto()
             .email(faker.internet().emailAddress());
 
