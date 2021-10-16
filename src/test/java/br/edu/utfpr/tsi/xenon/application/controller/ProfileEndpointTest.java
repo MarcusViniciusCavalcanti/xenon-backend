@@ -12,10 +12,16 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.springframework.http.HttpStatus.ACCEPTED;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 import br.edu.utfpr.tsi.xenon.AbstractSecurityContext;
 import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
@@ -24,6 +30,9 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputNameUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputNewCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRemoveCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto.TypeEnum;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarStatus;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import com.cloudinary.Cloudinary;
@@ -32,13 +41,13 @@ import com.github.javafaker.Faker;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.ResourceLock;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
@@ -53,6 +62,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
     private static final String URL_CHANGE_PASSWORD = "/api/profile/change-password";
     private static final String URL_DISABLE_ACCOUNT = "/api/profile/disable-account";
     private static final String URL_INCLUDE_AVATAR = "/api/profile/avatar";
+    private static final String URL_INCLUDE_DOCUMENT = "/api/profile/car/{id}/document";
 
     @Autowired
     private CarRepository carRepository;
@@ -163,6 +173,53 @@ class ProfileEndpointTest extends AbstractSecurityContext {
     }
 
     @Test
+    @DisplayName("Deve retornar conflict quando tentar incluir um novo é a placa já existe")
+    void shouldReturnConflictWhenIncludeNeCarButPlateExist() {
+        var user = createDriver();
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        user.setId(1L);
+        var carEntity = new CarEntity();
+        var plate = faker.bothify("???-####", TRUE);
+        carEntity.setPlate(plate);
+        carEntity.setNumberAccess(0);
+        carEntity.setModel("Model");
+        carEntity.setDocument("");
+        carEntity.setLastAccess(LocalDateTime.now());
+
+        var inputNewCarDto = new InputNewCarDto()
+            .plate(plate)
+            .model("Model Car");
+
+        carRepository.saveAndFlush(carEntity);
+        var message = messageSource.getMessage(
+            MessagesMapper.PLATE_ALREADY.getCode(),
+            new String[] {plate},
+            Locale.getDefault()
+        );
+
+        given(specAuthentication)
+            .port(port)
+            .accept(APPLICATION_JSON_VALUE)
+            .contentType(JSON)
+            .header("Accept-Language", Locale.getDefault().getLanguage())
+            .body(inputNewCarDto, JACKSON_2)
+            .expect()
+            .statusCode(CONFLICT.value())
+            .body("message", is(message))
+            .body("statusCode", is(CONFLICT.value()))
+            .body("path", is("/profile/include-new-car"))
+            .when()
+            .patch(URL_INCLUDE_NEW_CAR);
+
+        deleteUser(user);
+    }
+
+    @Test
     @DisplayName("Deve deve incluir carro com sucesso")
     @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.CarRepository")
     void shouldHaveIncludeNewCarSuccessfully() {
@@ -223,7 +280,8 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .delete(URL_REMOVE_CAR);
 
         var cars = carRepository.findByUser(user);
-        assertFalse(cars.stream().anyMatch(carEntity -> carEntity.getPlate().equals(inputRemoveCar.getPlate())));
+        assertFalse(cars.stream()
+            .anyMatch(carEntity -> carEntity.getPlate().equals(inputRemoveCar.getPlate())));
 
         deleteUser(user);
     }
@@ -297,7 +355,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
     void shouldHaveIncludeUserSuccessFully() throws URISyntaxException, IOException {
         var file = Paths.get(Objects
             .requireNonNull(
-                this.getClass().getResource("/test-file/extention-test/valid/file-png.png"))
+                this.getClass().getResource("/test-file/avatar-extention-test/valid/file-png.png"))
             .toURI());
 
         var user = createDriver();
@@ -307,9 +365,9 @@ class ProfileEndpointTest extends AbstractSecurityContext {
 
         setAuthentication(input);
 
-        var uploader = Mockito.mock(Uploader.class);
-        Mockito.when(cloudinary.uploader()).thenReturn(uploader);
-        Mockito.when(uploader.upload(Mockito.any(), Mockito.any()))
+        var uploader = mock(Uploader.class);
+        when(cloudinary.uploader()).thenReturn(uploader);
+        when(uploader.upload(any(), any()))
             .thenReturn(Map.of("url", "url"));
 
         given(specAuthentication)
@@ -321,7 +379,57 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .when()
             .post(URL_INCLUDE_AVATAR);
 
-        Mockito.verify(uploader).upload(Mockito.any(), Mockito.any());
+        verify(uploader).upload(any(), any());
+
+        deleteUser(user);
+    }
+
+    @Test
+    @DisplayName("Deve incluir arquivo com sucesso")
+    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.CarRepository")
+    void shouldHaveIncludeDocumento() throws URISyntaxException, IOException {
+        var file = Paths.get(Objects
+            .requireNonNull(
+                this.getClass().getResource("/test-file/document-extention-test/valid/valid.pdf"))
+            .toURI());
+
+        var user = createDriver();
+        var car = new CarEntity();
+        car.setCarStatus(CarStatus.WAITING);
+        car.setAuthorisedAccess(Boolean.FALSE);
+        car.setState("WAITING_DOCUMENT");
+        car.setUser(user);
+        car.setPlate(faker.bothify("###-???", TRUE));
+        car.setModel("MODEL");
+
+        carRepository.saveAndFlush(car);
+
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+        var uploader = mock(Uploader.class);
+        when(cloudinary.uploader()).thenReturn(uploader);
+        when(uploader.upload(any(), any()))
+            .thenReturn(Map.of("public_id", "public_id"));
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .multiPart(file.toFile())
+            .pathParam("id", car.getId())
+            .expect()
+            .statusCode(NO_CONTENT.value())
+            .when()
+            .post(URL_INCLUDE_DOCUMENT);
+
+        //noinspection OptionalGetWithoutIsPresent
+        var carEntity = carRepository.findById(car.getId()).get();
+
+        assertEquals(CarStatus.WAITING, carEntity.getCarStatus());
+        assertEquals("WAITING_DECISION", carEntity.getState());
+
+        verify(uploader).upload(any(), any());
 
         deleteUser(user);
     }

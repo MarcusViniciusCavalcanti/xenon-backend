@@ -2,26 +2,35 @@ package br.edu.utfpr.tsi.xenon.domain.user.aggregator;
 
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_ALREADY;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_INVALID;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import br.edu.utfpr.tsi.xenon.application.config.property.FilesProperty;
 import br.edu.utfpr.tsi.xenon.application.dto.InputNewCarDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorFile;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import com.cloudinary.Cloudinary;
+import com.cloudinary.Uploader;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -35,10 +44,12 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.multipart.MultipartFile;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - CarsAggregator")
@@ -46,6 +57,18 @@ class CarsAggregatorTest {
 
     @Mock
     private CarRepository repository;
+
+    @Spy
+    private Cloudinary cloudinary;
+
+    @Mock
+    private FilesProperty filesProperty;
+
+    @Mock
+    private ValidatorFile validatorFile;
+
+    @Mock
+    private ChangeStateCar changeStateCar;
 
     @InjectMocks
     private CarsAggregator carsAggregator;
@@ -131,6 +154,71 @@ class CarsAggregatorTest {
             () -> carsAggregator.includeNewCar(user, "model", "plate"));
 
         assertEquals(MessagesMapper.LIMIT_EXCEEDED_CAR.getCode(), exception.getCode());
+    }
+
+    @Test
+    @DisplayName("Deve lançar BusinessException quando arquivo não possou na validação")
+    void shouldThrowBusinessExceptionWhenFileInvalid() throws IOException {
+        var uploader = mock(Uploader.class);
+
+        var car = new CarEntity();
+        var document = Files.createTempFile("test", ".png").toFile();
+
+        when(validatorFile.validateDocumentFile(document)).thenReturn(FALSE);
+
+        var exception = assertThrows(BusinessException.class,
+            () -> carsAggregator.includeDocumentToCar(car, document));
+
+        assertNull(car.getDocument());
+        assertEquals(MessagesMapper.FILE_ALLOWED.getCode(), exception.getCode());
+
+        verify(filesProperty, never()).getDocUrl();
+        verify(uploader, never()).upload(eq(document), any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar BusinessException quando error no envio do arquivo")
+    void shouldThrowsBusinessExceptionWheSendFile() throws IOException {
+        var uploader = mock(Uploader.class);
+
+        var car = new CarEntity();
+        var document = Files.createTempFile("test", ".pdf").toFile();
+
+        when(cloudinary.uploader()).thenReturn(uploader);
+        when(uploader.upload(eq(document), any())).thenThrow(new IOException());
+        when(filesProperty.getDocUrl()).thenReturn("document");
+        when(validatorFile.validateDocumentFile(document)).thenReturn(TRUE);
+
+        var exception = assertThrows(BusinessException.class,
+            () -> carsAggregator.includeDocumentToCar(car, document));
+
+        assertNull(car.getDocument());
+        assertEquals(MessagesMapper.KNOWN.getCode(), exception.getCode());
+
+        verify(filesProperty).getDocUrl();
+        verify(uploader).upload(eq(document), any());
+    }
+
+    @Test
+    @DisplayName("Deve enviar arquivo com sucesso")
+    void shouldHaveSendDocument() throws IOException {
+        var uploader = mock(Uploader.class);
+        var publicId = "publicId";
+
+        var car = new CarEntity();
+        var document = Files.createTempFile("test", ".pdf").toFile();
+
+        when(validatorFile.validateDocumentFile(document)).thenReturn(TRUE);
+        when(filesProperty.getDocUrl()).thenReturn("document");
+        when(cloudinary.uploader()).thenReturn(uploader);
+        when(uploader.upload(eq(document), any())).thenReturn(Map.of("public_id", publicId));
+
+        carsAggregator.includeDocumentToCar(car, document);
+
+        assertNotNull(car.getDocument());
+
+        verify(filesProperty).getDocUrl();
+        verify(uploader).upload(eq(document), any());
     }
 
     private static Stream<Arguments> providerArgsToInvalidPlateOrModel() {

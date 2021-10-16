@@ -29,12 +29,30 @@ class ValidatorFileTest {
     @InjectMocks
     private ValidatorFile validatorFile;
 
-    private static Stream<Arguments> providerFiletToTest() throws IOException, URISyntaxException {
+    private static Stream<Arguments> providerFiletToTestAvatar() throws IOException, URISyntaxException {
         var folderValid = Paths.get(Objects
-            .requireNonNull(ValidatorFileTest.class.getResource("/test-file/extention-test/valid/"))
+            .requireNonNull(ValidatorFileTest.class.getResource(
+                "/test-file/avatar-extention-test/valid/"))
             .toURI());
         var folderInvalid = Paths.get(Objects.requireNonNull(
-            ValidatorFileTest.class.getResource("/test-file/extention-test/invalid/")).toURI());
+            ValidatorFileTest.class.getResource("/test-file/avatar-extention-test/invalid/")).toURI());
+        var valid = Files.walk(folderValid)
+            .filter(path -> !Files.isDirectory(path))
+            .map(path -> Arguments.arguments(path.toFile(), Boolean.TRUE));
+
+        var invalids = Files.walk(folderInvalid)
+            .map(path -> Arguments.arguments(path.toFile(), Boolean.FALSE));
+
+        return Stream.concat(valid, invalids);
+    }
+
+    private static Stream<Arguments> providerFiletToTestDocument() throws IOException, URISyntaxException {
+        var folderValid = Paths.get(Objects
+            .requireNonNull(ValidatorFileTest.class.getResource(
+                "/test-file/document-extention-test/valid/"))
+            .toURI());
+        var folderInvalid = Paths.get(Objects.requireNonNull(
+            ValidatorFileTest.class.getResource("/test-file/document-extention-test/invalid/")).toURI());
         var valid = Files.walk(folderValid)
             .filter(path -> !Files.isDirectory(path))
             .map(path -> Arguments.arguments(path.toFile(), Boolean.TRUE));
@@ -46,10 +64,18 @@ class ValidatorFileTest {
     }
 
     @ParameterizedTest
-    @MethodSource("providerFiletToTest")
-    @DisplayName("Deve validar se aquivo tem extensão de image permitidas [png, jpg, jpeg]")
+    @MethodSource("providerFiletToTestAvatar")
+    @DisplayName("Deve validar se arquivo tem extensão de image permitidas [png, jpg, jpeg]")
     void shouldVerifyExtensionFile(File file, Boolean expected) {
         var result = validatorFile.validateAvatarFile(file);
+        assertEquals(result, expected);
+    }
+
+    @ParameterizedTest
+    @MethodSource("providerFiletToTestDocument")
+    @DisplayName("Deve validar se arquivo tem extensão de image permitidas [pdf]")
+    void shouldVerifyExtensionFilePdf(File file, Boolean expected) {
+        var result = validatorFile.validateDocumentFile(file);
         assertEquals(result, expected);
     }
 }

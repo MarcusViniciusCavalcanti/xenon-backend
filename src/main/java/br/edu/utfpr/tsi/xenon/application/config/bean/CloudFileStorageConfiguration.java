@@ -17,7 +17,6 @@ import org.springframework.context.annotation.Configuration;
     "xenon.configurations.file.key",
     "xenon.configurations.file.avatarUrl",
     "xenon.configurations.file.docUrl",
-
 }, matchIfMissing = true)
 public class CloudFileStorageConfiguration {
 

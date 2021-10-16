@@ -7,10 +7,8 @@ import br.edu.utfpr.tsi.xenon.application.rules.IsAdmin;
 import br.edu.utfpr.tsi.xenon.application.rules.IsOperatorOrAdmin;
 import br.edu.utfpr.tsi.xenon.application.service.WorkstationApplicationService;
 import java.util.List;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -25,9 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/workstations")
-public class WorkstationEndpoint implements WorkstationApi, EndpointsTranslator {
+public class WorkstationEndpoint implements WorkstationApi {
 
-    private final MessageSource messageSource;
     private final WorkstationApplicationService workstationApplicationService;
 
     @Override
@@ -76,9 +73,5 @@ public class WorkstationEndpoint implements WorkstationApi, EndpointsTranslator 
         return ResponseEntity.ok(workstations);
     }
 
-    @Override
-    public MessageSource getMessageSource() {
-        return messageSource;
-    }
 }
 

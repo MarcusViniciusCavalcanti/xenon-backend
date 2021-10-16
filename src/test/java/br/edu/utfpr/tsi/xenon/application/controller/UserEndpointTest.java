@@ -21,6 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.http.HttpStatus.BAD_REQUEST;
 import static org.springframework.http.HttpStatus.CREATED;
 import static org.springframework.http.HttpStatus.FORBIDDEN;
+import static org.springframework.http.HttpStatus.NO_CONTENT;
 import static org.springframework.http.HttpStatus.OK;
 
 import br.edu.utfpr.tsi.xenon.AbstractSecurityContext;
@@ -31,6 +32,8 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto.TypeUserEnum;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarStatus;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
@@ -52,6 +55,8 @@ class UserEndpointTest extends AbstractSecurityContext {
     private static final String URL_USER_ALL = "/api/users/all";
     private static final String URL_USER_REMOVE_AUTHORIZATION = "/api/users/disabled/access";
     private static final String URL_USER_ADD_AUTHORIZATION = "/api/users/enabled/access";
+    private static final String URL_USER_APPROVED_CAR = "/api/users/car/{id}/document/approved";
+    private static final String URL_USER_REPROVED_CAR = "/api/users/car/{id}/document/reproved";
 
     @Autowired
     private CarRepository carRepository;
@@ -525,6 +530,94 @@ class UserEndpointTest extends AbstractSecurityContext {
 
         deleteUser(user);
         deleteUser(userAddAuthorization);
+    }
+
+    @Test
+    @DisplayName("Deve reprovar documentação do carro com sucesso")
+    void shouldHaveApprovedDocument() {
+        var faker = Faker.instance();
+        var user = createAdmin();
+        var roles = roleRepository.findAll();
+
+        var userCar = getUserEntity(faker, roles, TypeUser.SERVICE);
+        var car = new CarEntity();
+        car.setCarStatus(CarStatus.WAITING);
+        car.setAuthorisedAccess(Boolean.FALSE);
+        car.setState("WAITING_DECISION");
+        car.setUser(user);
+        car.setPlate("ABC-1234");
+        car.setModel("MODEL");
+        car.setUser(userCar);
+        userCar.getCar().add(car);
+
+        userRepository.saveAndFlush(userCar);
+
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .pathParam("id", car.getId())
+            .contentType(JSON)
+            .expect()
+            .statusCode(NO_CONTENT.value())
+            .when()
+            .patch(URL_USER_REPROVED_CAR);
+
+        //noinspection OptionalGetWithoutIsPresent
+        var carSaved = carRepository.findById(car.getId()).get();
+
+        assertFalse(carSaved.getAuthorisedAccess());
+        assertEquals(CarStatus.REPROVED, carSaved.getCarStatus());
+        assertEquals("REPROVED", carSaved.getState());
+    }
+
+    @Test
+    @DisplayName("Deve aprovar documentação do carro com sucesso")
+    void shouldHaveReprovedDocument() {
+        var faker = Faker.instance();
+        var user = createAdmin();
+        var roles = roleRepository.findAll();
+
+        var userCar = getUserEntity(faker, roles, TypeUser.SERVICE);
+        var car = new CarEntity();
+        car.setCarStatus(CarStatus.WAITING);
+        car.setAuthorisedAccess(Boolean.FALSE);
+        car.setState("WAITING_DECISION");
+        car.setUser(user);
+        car.setPlate(faker.bothify("###-?#??", TRUE));
+        car.setModel("MODEL");
+        car.setUser(userCar);
+        userCar.getCar().add(car);
+
+        userRepository.saveAndFlush(userCar);
+
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .pathParam("id", car.getId())
+            .contentType(JSON)
+            .expect()
+            .statusCode(NO_CONTENT.value())
+            .when()
+            .patch(URL_USER_APPROVED_CAR);
+
+        //noinspection OptionalGetWithoutIsPresent
+        var carSaved = carRepository.findById(car.getId()).get();
+
+        assertTrue(carSaved.getAuthorisedAccess());
+        assertEquals(CarStatus.APPROVED, carSaved.getCarStatus());
+        assertEquals("APPROVED", carSaved.getState());
     }
 
     private void setupDatabase() {

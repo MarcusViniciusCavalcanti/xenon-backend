@@ -70,7 +70,7 @@ class ExecutorResultTest {
     }
 
     @Test
-    @DisplayName("Deve enviar mensagem notificando que encontrou carro")
+    @DisplayName("Deve processar reconhecimento quando encontro mais de uma placa na base de dados")
     void shouldHaveMessageCarsByPlates() {
         var faker = Faker.instance();
 
@@ -104,7 +104,56 @@ class ExecutorResultTest {
 
         executorResult.processResult(plates, 1L);
 
-        verify(sendingMessageService).sendBeforeTransactionCommit(any(), any());
+        verify(sendingMessageService).sendBeforeTransactionCommit(
+            argThat(msg -> {
+                ResultProcessRecognizer message = (ResultProcessRecognizer) msg.message();
+                var confidence = message.getConfidence().equals(plate01.getConfidence());
+                var plate = message.getPlate().equals(plateString01);
+
+                return confidence && plate;
+            }),
+            any());
+    }
+
+    @Test
+    @DisplayName("Deve processar reconhecimento quando encontro mais de uma placa na base de dados")
+    void shouldHaveMessageCarsByOnePlate() {
+        var faker = Faker.instance();
+
+        var plate01 = new PlatesDto()
+            .plate(faker.bothify("???-####"))
+            .confidence(80.0F);
+
+        var plate02 = new PlatesDto()
+            .plate(faker.bothify("???-####"))
+            .confidence(75.99F);
+
+        var plateString01 = plate01.getPlate();
+        var plateString02 = plate02.getPlate();
+        var plates = Map.of(
+            plateString01, List.of(plate01),
+            plateString02, List.of(plate02)
+        );
+
+        var user = new UserEntity();
+        var car01 = new CarEntity();
+        car01.setPlate(plateString01);
+        car01.setUser(user);
+
+        when(carRepository.findAllByPlateIn(anyList()))
+            .thenReturn(List.of(car01));
+
+        executorResult.processResult(plates, 1L);
+
+        verify(sendingMessageService).sendBeforeTransactionCommit(
+            argThat(msg -> {
+                ResultProcessRecognizer message = (ResultProcessRecognizer) msg.message();
+                var confidence = message.getConfidence().equals(plate01.getConfidence());
+                var plate = message.getPlate().equals(plateString01);
+
+                return confidence && plate;
+            }),
+            any());
     }
 
     @Test

@@ -1,27 +1,28 @@
 package br.edu.utfpr.tsi.xenon.application.handler;
 
-import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.*;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.ARGUMENT_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.EMAIL_EXIST;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.IP_WORKSTATION_EXIST;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.KNOWN;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.MEDIA_TYPE_NOT_SUPPORTED;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_ALREADY;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.REQUEST_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.REQUEST_METHOD_INVALID;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.RESOURCE_NOT_FOUND;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.URL_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
 import br.edu.utfpr.tsi.xenon.application.dto.ErrorDto;
-import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
+import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.exception.RegistryUserException;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
@@ -180,7 +181,8 @@ class HandlerErrorTest {
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
         when(messageSource
-            .getMessage(eq(REQUEST_METHOD_INVALID.getCode()), any(String[].class), any(Locale.class)))
+            .getMessage(eq(REQUEST_METHOD_INVALID.getCode()), any(String[].class),
+                any(Locale.class)))
             .thenReturn("message");
 
         var result = handlerError.httpRequestMethodNotSupportedException(exception, request);
@@ -222,7 +224,8 @@ class HandlerErrorTest {
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
         when(messageSource
-            .getMessage(eq(MEDIA_TYPE_NOT_SUPPORTED.getCode()), any(String[].class), any(Locale.class)))
+            .getMessage(eq(MEDIA_TYPE_NOT_SUPPORTED.getCode()), any(String[].class),
+                any(Locale.class)))
             .thenReturn("message");
 
         var result = handlerError.httpMediaTypeNotSupportedException(exception, request);
@@ -238,7 +241,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando HttpMediaTypeNotSupportedException")
     void shouldReturnRegistryUserException() {
-        var exception =new RegistryUserException(EMAIL_EXIST.getCode());
+        var exception = new RegistryUserException(EMAIL_EXIST.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -259,7 +262,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando HttpMediaTypeNotSupportedException")
     void shouldReturnException() {
-        var exception =new Exception(EMAIL_EXIST.getCode());
+        var exception = new Exception(EMAIL_EXIST.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -280,7 +283,7 @@ class HandlerErrorTest {
     @Test
     @DisplayName("Deve retornar erro quando RuntimeException")
     void shouldReturnRuntimeException() {
-        var exception =new RuntimeException(KNOWN.getCode());
+        var exception = new RuntimeException(KNOWN.getCode());
 
         when(request.getServletPath()).thenReturn("path");
         when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
@@ -319,5 +322,25 @@ class HandlerErrorTest {
         assertEquals(422, error.getStatusCode());
     }
 
+    @Test
+    @DisplayName("Deve retornar error quando PlateException")
+    void shouldReturnPlateException() {
+        var exception = new PlateException("plate", PLATE_ALREADY.getCode());
+
+        when(request.getServletPath()).thenReturn("path");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
+        when(messageSource
+            .getMessage(eq(PLATE_ALREADY.getCode()), any(String[].class), any(Locale.class)))
+            .thenReturn("message");
+
+        var result = handlerError.plateException(exception, request);
+
+        assertEquals(CONFLICT, result.getStatusCode());
+        var error = (ErrorDto) result.getBody();
+        assert error != null;
+        assertEquals("message", error.getMessage());
+        assertEquals("path", error.getPath());
+        assertEquals(409, error.getStatusCode());
+    }
 
 }

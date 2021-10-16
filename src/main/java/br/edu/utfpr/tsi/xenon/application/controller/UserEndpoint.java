@@ -8,6 +8,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.rules.IsAdmin;
+import br.edu.utfpr.tsi.xenon.application.service.CarApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.UserCreatorServiceApplication;
 import br.edu.utfpr.tsi.xenon.application.service.UserDeleterApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.UserGetterServiceApplication;
@@ -41,6 +42,7 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
     private final UserUpdaterServiceApplication userUpdaterServiceApplication;
     private final UserGetterServiceApplication userGetterServiceApplication;
     private final UserDeleterApplicationService userDeleterApplicationService;
+    private final CarApplicationService carApplicationService;
 
     @Override
     @IsAdmin
@@ -123,8 +125,10 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
     @Override
     @IsAdmin
     @PatchMapping("/enabled/access")
-    public ResponseEntity<ProcessResultDto> enabledUserAccess(InputAccessUserDto inputAccessUserDto,
-        String authorization, String acceptLanguage) {
+    public ResponseEntity<ProcessResultDto> enabledUserAccess(
+        InputAccessUserDto inputAccessUserDto,
+        String authorization,
+        String acceptLanguage) {
         log.info("Recebendo requisição para autorizar acesso usuário.");
         log.debug(
             "Recebendo requisição para autorizar acesso usuário. input: {} authorization: {}",
@@ -159,6 +163,30 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
 
         var pageUser = userGetterServiceApplication.getAllUser(params);
         return ResponseEntity.ok(pageUser);
+    }
+
+    @Override
+    @IsAdmin
+    @PatchMapping("/car/{id}/document/approved")
+    public ResponseEntity<Void> documentApproved(
+        @PathVariable("id") Long id,
+        String authorization) {
+        log.info("Recebendo requisição para aprovar documento");
+        log.debug("de id: {}", id);
+
+        carApplicationService.authorisedCar(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @IsAdmin
+    @PatchMapping("/car/{id}/document/reproved")
+    public ResponseEntity<Void> documentReproved(Long id, String authorization) {
+        log.info("Recebendo requisição para reprovar documento");
+        log.debug("de id: {}", id);
+
+        carApplicationService.unauthorisedCar(id);
+        return ResponseEntity.noContent().build();
     }
 
     @Override

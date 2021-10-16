@@ -59,9 +59,7 @@ class UserCreatorServiceTest {
         var input = new InputRegistryStudentDto()
             .email(faker.internet().emailAddress())
             .password("abc12345")
-            .confirmPassword("abc12345")
-            .plateCar(faker.bothify("???-####"))
-            .modelCar("Model car");
+            .confirmPassword("abc12345");
 
         var entity = getUserEntity();
         includeAccessCard(entity);
@@ -74,9 +72,6 @@ class UserCreatorServiceTest {
                 eq(input.getEmail()),
                 eq(input.getPassword()),
                 eq(input.getConfirmPassword()));
-        doNothing()
-            .when(carsAggregator)
-            .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
         doNothing()
             .when(rolesAggregator)
             .includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
@@ -93,12 +88,9 @@ class UserCreatorServiceTest {
                 eq(input.getEmail()),
                 eq(input.getPassword()),
                 eq(input.getConfirmPassword()));
-        verify(carsAggregator)
-            .includeNewCar(any(), eq(input.getModelCar()), eq(input.getPlateCar()));
-        verify(carsAggregator)
-            .includeNewCar(any(), eq(input.getModelCar()), eq(input.getPlateCar()));
         verify(avatarAggregator)
             .includeDefaultAvatarUrl(any(UserEntity.class));
+        verify(rolesAggregator).includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
     }
 
     @Test

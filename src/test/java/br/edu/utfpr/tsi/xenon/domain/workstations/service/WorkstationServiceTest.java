@@ -1,6 +1,7 @@
 package br.edu.utfpr.tsi.xenon.domain.workstations.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto;
@@ -67,5 +68,19 @@ class WorkstationServiceTest {
         assertEquals(name, workstation.getName());
         assertEquals(mode, workstation.getMode());
         assertEquals(port, workstation.getPort());
+    }
+
+    @Test
+    @DisplayName("Deve deve lançar IllegalStateException")
+    void shouldThrowsIllegalStateException() throws NoSuchAlgorithmException {
+        var faker = Faker.instance();
+        var ip = faker.internet().ipV6Address();
+        var name = faker.rockBand().name();
+        var mode = ModeEnum.AUTOMATIC.name();
+        var port = 9000;
+
+        when(keyService.createKey()).thenThrow(new NoSuchAlgorithmException());
+
+        assertThrows(IllegalStateException.class, () -> workstationService.create(ip, name, mode, port));
     }
 }

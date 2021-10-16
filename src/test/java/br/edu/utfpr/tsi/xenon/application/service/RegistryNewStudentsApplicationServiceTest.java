@@ -75,7 +75,6 @@ class RegistryNewStudentsApplicationServiceTest {
         user.setAccessCard(accessCard);
         user.setTypeUser(TypeUser.STUDENTS.name());
 
-        when(userRepository.existsByName(input.getName())).thenReturn(FALSE);
         when(validatorEmail.isEmail(input.getEmail())).thenReturn(TRUE);
         when(validatorEmail.validateEmailStudents(input.getEmail())).thenReturn(TRUE);
         when(validatorEmail.isExistEmail(input.getEmail())).thenReturn(FALSE);
@@ -87,7 +86,6 @@ class RegistryNewStudentsApplicationServiceTest {
 
         registryNewStudentsApplicationService.registryNewStudents(input);
 
-        verify(userRepository).existsByName(input.getName());
         verify(validatorEmail).isEmail(input.getEmail());
         verify(validatorEmail).validateEmailStudents(input.getEmail());
         verify(validatorEmail).isExistEmail(input.getEmail());

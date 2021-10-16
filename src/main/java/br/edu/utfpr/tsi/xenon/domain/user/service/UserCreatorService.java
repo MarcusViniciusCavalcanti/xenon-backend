@@ -5,6 +5,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AccessCardAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.AvatarAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.CarsAggregator;
+import br.edu.utfpr.tsi.xenon.domain.user.aggregator.ChangeStateCar;
 import br.edu.utfpr.tsi.xenon.domain.user.aggregator.RolesAggregator;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
@@ -41,7 +42,6 @@ public class UserCreatorService {
         );
 
         rolesAggregator.includeRoles(entity.getAccessCard(), TypeUser.STUDENTS, List.of(1L));
-        carsAggregator.includeNewCar(entity, input.getModelCar(), input.getPlateCar());
         avatarAggregator.includeDefaultAvatarUrl(entity);
 
         return entity;

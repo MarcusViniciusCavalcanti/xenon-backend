@@ -41,7 +41,6 @@ public class RegistryNewStudentsApplicationService implements UserServiceApplica
         log.info("Processo de registro de novo estudante: {}", input.getEmail());
         log.debug("registro de estudante com os campos: {}", input);
 
-        checkNameExist(input.getName());
         checkIsEmail(input.getEmail());
         checkEmailIsInstitutional(input.getEmail());
         checkExistEmail(input.getEmail());

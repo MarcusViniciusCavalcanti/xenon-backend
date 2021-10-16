@@ -42,6 +42,7 @@ public interface UserFactory {
             public UserEntity create(InputRegistryStudentDto input) {
                 var user = map.get(TypeUser.STUDENTS).get();
                 user.setName(input.getName());
+                user.setAuthorisedAccess(Boolean.TRUE);
                 return user;
             }
 

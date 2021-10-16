@@ -200,7 +200,7 @@ public class HandlerError implements EndpointsTranslator {
         log.error("placa já existe: {}", exception.getMessage());
 
         var path = request.getServletPath();
-        var locale = getLocale(request.getHeader("accept-language"));
+        var locale = getLocale(request.getHeader(ACCEPT_LANGUAGE));
         var message = getMessage(exception.getCode(), locale, exception.getPlate());
 
         var error = new ErrorDto()

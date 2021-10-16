@@ -3,6 +3,8 @@ package br.edu.utfpr.tsi.xenon.domain.user.entity;
 import java.time.LocalDateTime;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EnumType;
+import javax.persistence.Enumerated;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -48,6 +50,12 @@ public class CarEntity {
 
     @Column(name = "authorised_access")
     private Boolean authorisedAccess = Boolean.FALSE;
+
+    @Column(name = "state")
+    private String state;
+
+    @Enumerated(EnumType.STRING)
+    private CarStatus carStatus;
 
     @PrePersist
     private void newCar() {

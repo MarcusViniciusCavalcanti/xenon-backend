@@ -11,7 +11,7 @@
     </parent>
     <groupId>br.edu.utfpr.tsi.xenon</groupId>
     <artifactId>xenon</artifactId>
-    <version>0.0.4</version>
+    <version>0.0.6</version>
     <name>xenon-backend</name>
     <description>Demo project for Spring Boot</description>
 
@@ -140,6 +140,7 @@
                             <excludes>
                                 <exclude>br/edu/utfpr/tsi/xenon/application/config/**/*.class</exclude>
                                 <exclude>br/edu/utfpr/tsi/xenon/rest/controller/EndpointsTranslator.class</exclude>
+                                <exclude>br/edu/utfpr/tsi/xenon/application/controller/DocumentationController.class</exclude>
                                 <exclude>br/edu/utfpr/tsi/xenon/application/api/*.class</exclude>
                                 <exclude>br/edu/utfpr/tsi/xenon/application/dto/*.class</exclude>
                                 <exclude>br/edu/utfpr/tsi/xenon/XenonBackendApplication.class</exclude>

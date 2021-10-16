@@ -1,16 +1,28 @@
 package br.edu.utfpr.tsi.xenon.domain.user.aggregator;
 
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.FILE_ALLOWED;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.KNOWN;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.LIMIT_EXCEEDED_CAR;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_ALREADY;
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PLATE_INVALID;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 
+import br.edu.utfpr.tsi.xenon.application.config.property.FilesProperty;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorFile;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import com.cloudinary.Cloudinary;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Locale;
+import java.util.Map;
 import java.util.regex.Pattern;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +33,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Component
@@ -46,6 +59,10 @@ public class CarsAggregator {
     }
 
     private final CarRepository carRepository;
+    private final ValidatorFile validatorFile;
+    private final FilesProperty filesProperty;
+    private final Cloudinary cloudinary;
+    private final ChangeStateCar changeStateCar;
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void includeNewCar(UserEntity user, String modelCar, String plateCar) {
@@ -76,7 +93,9 @@ public class CarsAggregator {
             car.setPlate(plateFormatted);
             car.setNumberAccess(0);
             car.setUser(user);
+            car.setAuthorisedAccess(FALSE);
 
+            changeStateCar.executeProcess(car);
             user.includeLastCar(car);
         } else {
             throw new PlateException(plateCar, PLATE_INVALID.getCode());
@@ -111,5 +130,35 @@ public class CarsAggregator {
         if (userEntity.getCar().size() > 5) {
             throw new BusinessException(422, LIMIT_EXCEEDED_CAR.getCode(), plate);
         }
+    }
+
+    public void includeDocumentToCar(CarEntity carEntity, File document) {
+        try {
+            log.info("Validando arquivo");
+            if (FALSE.equals(validatorFile.validateDocumentFile(document))) {
+                throw new BusinessException(400, FILE_ALLOWED.getCode(), "pdf");
+            }
+
+            var options = Map.of(
+                "resource_type", "pdf",
+                "public_id", "%d".formatted(carEntity.getId()),
+                "folder", filesProperty.getDocUrl(),
+                "filename_override", TRUE,
+                "use_filename", TRUE,
+                "overwrite", TRUE
+            );
+
+            log.info("Salvando arquivo");
+            log.debug("Enviando arquivo para store com os parâmentros: {}", options);
+            var publicId = (String)
+                cloudinary.uploader().upload(document, options).get("public_id");
+
+            carEntity.setDocument(publicId);
+            changeStateCar.executeProcess(carEntity);
+        } catch (IOException e) {
+            log.error("Error enviar arquivo para servidor de arquivo");
+            throw new BusinessException(422, KNOWN.getCode());
+        }
+
     }
 }

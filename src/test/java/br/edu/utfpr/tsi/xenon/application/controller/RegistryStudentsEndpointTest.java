@@ -87,12 +87,6 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .body("email", is(input.getEmail()))
             .body("type", is(TypeUser.STUDENTS.name()))
             .body("avatar", containsString("/defaultUser.png"))
-            .body("cars[0].id", notNullValue())
-            .body("cars[0].modelCar", is(input.getModelCar()))
-            .body("cars[0].plateCar", is(input.getPlateCar()))
-            .body("cars[0].document", nullValue())
-            .body("cars[0].lastAcess", nullValue())
-            .body("cars[0].numberAccess", is(0))
             .body("roles[0].id", is(1))
             .body("roles[0].name", is("ROLE_DRIVER"))
             .body("roles[0].description", is("Perfil Motorista"))
@@ -124,53 +118,6 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .body("details[].field",
                 everyItem(hasItems("email", "name", "password", "confirmPassword", "modelCar",
                     "plateCar")))
-            .when()
-            .post(URL_REGISTRY);
-    }
-
-    @Test
-    @DisplayName("Deve retornar erro que placa do carro já cadastrada")
-    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.CarRepository")
-    void shouldReturnErrorPlateExist() {
-        var email = faker.bothify("plate-exist-####@alunos.utfpr.edu.br");
-        var pass = faker.regexify("????????");
-        var plateCar = faker.bothify("???-####", Boolean.TRUE);
-        var modelCar = faker.rockBand().name();
-        var input = new InputRegistryStudentDto()
-            .email(email)
-            .name(faker.name().fullName())
-            .password(pass)
-            .confirmPassword(pass)
-            .modelCar(modelCar)
-            .plateCar(plateCar);
-
-        var user = new UserEntity();
-        user.setId(1L);
-        var carEntity = new CarEntity();
-        carEntity.setPlate(plateCar);
-        carEntity.setNumberAccess(0);
-        carEntity.setModel(modelCar);
-        carEntity.setDocument("");
-        carEntity.setLastAccess(LocalDateTime.now());
-
-        carRepository.saveAndFlush(carEntity);
-        var message = messageSource.getMessage(
-            MessagesMapper.PLATE_ALREADY.getCode(),
-            new String[] {plateCar},
-            Locale.getDefault()
-        );
-
-        given()
-            .port(port)
-            .accept(APPLICATION_JSON_VALUE)
-            .contentType(JSON)
-            .header("Accept-Language", Locale.getDefault().getLanguage())
-            .body(input, JACKSON_2)
-            .expect()
-            .statusCode(CONFLICT.value())
-            .body("message", is(message))
-            .body("statusCode", is(CONFLICT.value()))
-            .body("path", is("/new-students/registry"))
             .when()
             .post(URL_REGISTRY);
     }

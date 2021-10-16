@@ -20,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -128,6 +129,20 @@ public class ProfileEndpoint implements ProfileApi, EndpointsTranslator {
     public ResponseEntity<UserDto> includeAvatar(String authorization, MultipartFile fileName) {
         var user = userUpdaterServiceApplication.changeAvatar(fileName, authorization);
         return ResponseEntity.ok(user);
+    }
+
+    @Override
+    @PostMapping("/car/{id}/document")
+    public ResponseEntity<Void> includeDocumentCar(
+        @PathVariable("id") Long id,
+        String authorization,
+        MultipartFile fileName) {
+        log.info("Recebendo requisição para incluir documento de carro");
+        log.debug("carro de id {}", id);
+
+        carApplicationService.includeDocument(id, fileName, authorization);
+
+        return ResponseEntity.noContent().build();
     }
 
     @Override
