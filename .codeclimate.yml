@@ -11,6 +11,8 @@ exclude_patterns:
   - ".mvn/"
   - "src/main/resources/db/"
   - "src/main/resources/static/"
+  - "src/main/resources/message/"
+  - "src/main/resources/public/"
   - "**/vendor/"
   - "src/test/resources/"
   - "**/sql/*.sql"
