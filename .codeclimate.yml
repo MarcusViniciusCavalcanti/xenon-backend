@@ -1,0 +1,18 @@
+checks:
+  method-complexity:
+    config:
+      threshold: 15
+  argument-count:
+    config:
+      threshold: 5
+
+exclude_patterns:
+  - ".gradle/"
+  - ".mvn/"
+  - "src/main/resources/db/"
+  - "src/main/resources/static/"
+  - "**/vendor/"
+  - "src/test/resources/"
+  - "**/sql/*.sql"
+  - "**/test/"
+  - "checkstyle/"

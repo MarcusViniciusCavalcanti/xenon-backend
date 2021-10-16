@@ -1,0 +1,25 @@
+language: java
+jdk: openjdk16
+
+addons:
+  code_climate:
+    repo_token:
+      secure: 0d1a1a9b60cba5498c56d76d5f472a9919855a0b
+
+env:
+  global:
+    - CC_TEST_REPORTER_ID=$CODECLIMATE_REPO_TOKEN
+
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
+script:
+  - mvn test
+
+after_script:
+  - ./cc-test-reporter format-coverage -d -t jacoco ./target/jacoco-ut/jacoco.xml
+  - ./cc-test-reporter upload-coverage -d
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
