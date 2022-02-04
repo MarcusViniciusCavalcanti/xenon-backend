@@ -293,7 +293,7 @@ public record MessageRegistryTemplate(String to, String url, String name) implem
             border="0"><tr style="line-height:0px">
             <td style="padding-right: 5px;padding-left: 5px;" align="center">
             <![endif]--><img class="center fixedwidth" align="center" border="0"\s
-            src="https://d15k2d11r6t6rl.cloudfront.net/public/users/Integrators/BeeProAgency/702225_684920/logo-white-bg%402x.png"
+            src="https://res.cloudinary.com/xenonapp/image/upload/v1635709885/avatar/logo-white-bg_2x_gosksu.png"
             alt="LOGO" title="LOGO" style="text-decoration: none;
             -ms-interpolation-mode: bicubic; height: auto;\s
             border: 0; width: 350px; max-width: 100%;

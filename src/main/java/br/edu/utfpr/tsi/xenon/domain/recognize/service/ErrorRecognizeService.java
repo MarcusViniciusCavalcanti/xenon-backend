@@ -2,12 +2,12 @@ package br.edu.utfpr.tsi.xenon.domain.recognize.service;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRecognizerDto;
 import br.edu.utfpr.tsi.xenon.domain.recognize.entity.ErrorRecognizerEntity;
+import br.edu.utfpr.tsi.xenon.domain.recognize.entity.RecognizeEntity;
 import br.edu.utfpr.tsi.xenon.structure.exception.RecognizerError;
 import br.edu.utfpr.tsi.xenon.structure.repository.ErrorRecognizerRepository;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -21,31 +21,29 @@ public class ErrorRecognizeService {
         String ip,
         InputRecognizerDto input) {
         if (exception instanceof RecognizerError ex) {
-            var trace = Arrays.stream(ex.getStackTrace())
-                .map(StackTraceElement::toString)
-                .collect(Collectors.joining());
+            var stackTrace = ExceptionUtils.getStackTrace(ex);
 
             var error = createError(
-                trace,
+                stackTrace,
                 exception.getMessage(),
                 ex.getWorkstationName(),
                 ((RecognizerError) exception).getInput().toString(),
                 ip);
 
+            createRecognize(ip, input, error);
             errorRecognizerRepository.save(error);
 
         } else {
-            var trace = Arrays.stream(exception.getStackTrace())
-                .map(StackTraceElement::toString)
-                .collect(Collectors.joining());
+            var stackTrace = ExceptionUtils.getStackTrace(exception);
 
             var error = createError(
-                trace,
+                stackTrace,
                 exception.getMessage(),
                 "Não informado",
                 input.toString(),
                 ip);
 
+            createRecognize(ip, input, error);
             errorRecognizerRepository.save(error);
         }
     }
@@ -65,5 +63,23 @@ public class ErrorRecognizeService {
         error.setInput(input);
 
         return error;
+    }
+
+    private void createRecognize(
+        String ip,
+        InputRecognizerDto input,
+        ErrorRecognizerEntity errorRecognizer) {
+        var firstDto = input.getRecognizers().get(0);
+        var recognize = new RecognizeEntity();
+
+        errorRecognizer.setRecognize(recognize);
+        recognize.setErrorRecognizer(errorRecognizer);
+        recognize.setConfidence(firstDto.getConfidence());
+        recognize.setHasError(Boolean.TRUE);
+        recognize.setOriginIp(ip);
+        recognize.setAccessGranted(Boolean.FALSE);
+        recognize.setEpochTime(LocalDateTime.now());
+        recognize.setPlate(firstDto.getPlate());
+        recognize.setDriverName("Desconhecido");
     }
 }

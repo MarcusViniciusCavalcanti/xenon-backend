@@ -14,16 +14,16 @@ public class ParamsQuerySearchUserDto {
     private final Long page;
     private final String nameOrEmail;
     private final String type;
-    private final SortedEnum sorted;
+    private final SortedUserPropertyEnum sorted;
     private final DirectionEnum direction;
 
-    public enum SortedEnum {
+    public enum SortedUserPropertyEnum {
         NAME("name"),
         EMAIL("email"),
         TYPE("type"),
         CREATED("createdAt");
 
-        private static final Map<String, SortedEnum> values = Map.of(
+        private static final Map<String, SortedUserPropertyEnum> values = Map.of(
             "name", NAME,
             "email", EMAIL,
             "type", TYPE
@@ -32,40 +32,16 @@ public class ParamsQuerySearchUserDto {
         @Getter
         private final String value;
 
-        SortedEnum(String value) {
+        SortedUserPropertyEnum(String value) {
             this.value = value;
         }
 
-        public static SortedEnum fromValue(String text) {
+        public static SortedUserPropertyEnum fromValue(String text) {
             if (StringUtils.isNotBlank(text)) {
                 return values.getOrDefault(text.toLowerCase(Locale.ROOT), CREATED);
             }
 
             return CREATED;
-        }
-    }
-
-    public enum DirectionEnum {
-        ASC("asc"),
-        DESC("desc");
-
-        private static final Map<String, DirectionEnum> values = Map.of(
-            "desc", DESC,
-            "asc", ASC
-        );
-
-        private final String value;
-
-        DirectionEnum(String value) {
-            this.value = value;
-        }
-
-        public static DirectionEnum fromValue(String text) {
-            if (StringUtils.isNotBlank(text)) {
-                return values.getOrDefault(text.toLowerCase(Locale.ROOT), DESC);
-            }
-
-            return DESC;
         }
     }
 
@@ -90,6 +66,6 @@ public class ParamsQuerySearchUserDto {
     @Override
     public String toString() {
         return "[size:%d, page:%d, nameOrEmail:%s, sorted:%s, direction:%s, type:%s]"
-            .formatted(size, page, nameOrEmail, sorted.value, direction.value, type);
+            .formatted(size, page, nameOrEmail, sorted.value, direction.getValue(), type);
     }
 }

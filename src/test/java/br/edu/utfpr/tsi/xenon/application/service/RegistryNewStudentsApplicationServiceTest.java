@@ -3,6 +3,7 @@ package br.edu.utfpr.tsi.xenon.application.service;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static org.awaitility.Durations.TWO_HUNDRED_MILLISECONDS;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
@@ -132,5 +133,13 @@ class RegistryNewStudentsApplicationServiceTest {
         when(userRepository.findByAccessCardUsername(email)).thenReturn(Optional.empty());
         assertThrows(ResourceNotFoundException.class,
             () -> registryNewStudentsApplicationService.activateAccount(params));
+    }
+
+    @Test
+    @DisplayName("Deve retonar uma istancia do repositório")
+    void shouldReturnRepository() {
+        var repository = registryNewStudentsApplicationService.getUserRepository();
+
+        assertEquals(userRepository, repository);
     }
 }

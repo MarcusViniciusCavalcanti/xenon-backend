@@ -55,8 +55,8 @@ class UserEndpointTest extends AbstractSecurityContext {
     private static final String URL_USER_ALL = "/api/users/all";
     private static final String URL_USER_REMOVE_AUTHORIZATION = "/api/users/disabled/access";
     private static final String URL_USER_ADD_AUTHORIZATION = "/api/users/enabled/access";
-    private static final String URL_USER_APPROVED_CAR = "/api/users/car/{id}/document/approved";
-    private static final String URL_USER_REPROVED_CAR = "/api/users/car/{id}/document/reproved";
+    private static final String URL_USER_APPROVED_CAR = "/api/users/car/{id}/approved";
+    private static final String URL_USER_REPROVED_CAR = "/api/users/car/{id}/reproved";
 
     @Autowired
     private CarRepository carRepository;

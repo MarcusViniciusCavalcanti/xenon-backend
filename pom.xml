@@ -11,12 +11,12 @@
     </parent>
     <groupId>br.edu.utfpr.tsi.xenon</groupId>
     <artifactId>xenon</artifactId>
-    <version>0.0.6</version>
+    <version>0.0.29</version>
     <name>xenon-backend</name>
     <description>Demo project for Spring Boot</description>
 
     <properties>
-        <java.version>16</java.version>
+        <java.version>17</java.version>
         <testcontainers.version>1.15.3</testcontainers.version>
         <swagger-annotations.version>1.6.0</swagger-annotations.version>
 
@@ -24,24 +24,24 @@
 
         <jacoco.skip>${skipTests}</jacoco.skip>
 
-        <lombok.version>1.18.20</lombok.version>
+        <lombok.version>1.18.22</lombok.version>
         <openapi-generator.version>5.0.1</openapi-generator.version>
         <springfox-swagger2>3.0.0</springfox-swagger2>
         <openapi-generator.version>3.3.4</openapi-generator.version>
         <maven-dependency-plugin.version>3.1.1</maven-dependency-plugin.version>
         <download-maven-plugin.version>1.5.0</download-maven-plugin.version>
-        <cxf.version>3.3.5</cxf.version>
+        <cxf.version>3.4.5</cxf.version>
 
-        <rest-assured.version>4.2.0</rest-assured.version>
-        <javafaker.version>0.15</javafaker.version>
-        <awaitility.version>4.0.2</awaitility.version>
-        <springdoc-openapi-webmvc-core.version>1.5.10</springdoc-openapi-webmvc-core.version>
+        <rest-assured.version>4.4.0</rest-assured.version>
+        <javafaker.version>1.0.2</javafaker.version>
+        <awaitility.version>4.1.1</awaitility.version>
+        <springdoc-openapi-webmvc-core.version>1.5.12</springdoc-openapi-webmvc-core.version>
         <springfox-swagger2.version>3.0.0</springfox-swagger2.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <cloudinary-http44.version>1.29.0</cloudinary-http44.version>
         <jaxb-impl.version>3.0.2</jaxb-impl.version>
-        <wiremock.version>1.58</wiremock.version>
+        <wiremock.version>2.27.2</wiremock.version>
         <jjwt.version>0.9.1</jjwt.version>
     </properties>
 

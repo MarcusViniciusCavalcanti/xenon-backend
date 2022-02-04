@@ -83,4 +83,30 @@ class WorkstationServiceTest {
 
         assertThrows(IllegalStateException.class, () -> workstationService.create(ip, name, mode, port));
     }
+
+    @Test
+    @DisplayName("Deve formatar uri para ipv4")
+    void shouldReturnIpv4Formatted() {
+        var faker = Faker.instance();
+        var ip = faker.internet().ipV4Address();
+        var port = 9000;
+        var expecteFormatter = "http://%s:%d/open".formatted(ip, port);
+
+        var result = workstationService.buildUriOpen(ip, port);
+
+        assertEquals(expecteFormatter, result);
+    }
+
+    @Test
+    @DisplayName("Deve formatar uri para ipv4")
+    void shouldReturnIpv6Formatted() {
+        var faker = Faker.instance();
+        var ip = faker.internet().ipV6Address();
+        var port = 9000;
+        var expecteFormatter = "http://[%s]:%d/open".formatted(ip, port);
+
+        var result = workstationService.buildUriOpen(ip, port);
+
+        assertEquals(expecteFormatter, result);
+    }
 }

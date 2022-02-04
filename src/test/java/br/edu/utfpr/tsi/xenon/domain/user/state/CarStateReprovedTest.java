@@ -41,4 +41,13 @@ class CarStateReprovedTest {
     void shouldReturnWAITING_DOCUMENT() {
         assertEquals(CarStateName.WAITING_DOCUMENT, new CarStateReproved().previsionAllowsState());
     }
+
+    @Test
+    @DisplayName("Deve lançar IllegalStateException quando tentar processar o próximo estado")
+    void shouldThrowsIllegalStateExceptionWhenExecuteProcess() {
+        var carStateReproved = new CarStateReproved();
+        var exception  = assertThrows(IllegalStateException.class,
+            () -> carStateReproved.executeProcess(new CarEntity()));
+        assertEquals("Não é possível avançar o estado quando o estado é REPROVED", exception.getMessage());
+    }
 }

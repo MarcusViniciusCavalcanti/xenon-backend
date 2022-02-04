@@ -60,7 +60,7 @@ public abstract class CarState {
         );
     }
 
-    enum CarStateName {
+    public enum CarStateName {
         CREATE,
         APPROVED,
         BLOCK,

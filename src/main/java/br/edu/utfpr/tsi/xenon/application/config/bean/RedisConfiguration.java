@@ -5,8 +5,12 @@ import static java.lang.Boolean.TRUE;
 import br.edu.utfpr.tsi.xenon.application.config.property.RedisProperty;
 import br.edu.utfpr.tsi.xenon.application.dto.CarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.RecognizerSummaryDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UserCarsSummaryDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UsersRegistrySummaryDto;
 import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
+import br.edu.utfpr.tsi.xenon.application.dto.WorkstationSummaryDto;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.time.Duration;
@@ -86,6 +90,21 @@ public class RedisConfiguration {
             var workstationDto = new Jackson2JsonRedisSerializer<>(WorkstationDto.class);
             workstationDto.setObjectMapper(objectMapper);
 
+            var workstationListSummary = objectMapper.getTypeFactory()
+                .constructCollectionType(ArrayList.class, WorkstationSummaryDto.class);
+
+            var workstationSummary = new Jackson2JsonRedisSerializer<>(workstationListSummary);
+            workstationSummary.setObjectMapper(objectMapper);
+
+            var carsSummary = new Jackson2JsonRedisSerializer<>(UserCarsSummaryDto.class);
+            carsSummary.setObjectMapper(objectMapper);
+
+            var recognizeSummary = new Jackson2JsonRedisSerializer<>(RecognizerSummaryDto.class);
+            recognizeSummary.setObjectMapper(objectMapper);
+
+            var userSummary = new Jackson2JsonRedisSerializer<>(UsersRegistrySummaryDto.class);
+            userSummary.setObjectMapper(objectMapper);
+
             builder
                 .withCacheConfiguration("User",
                     RedisCacheConfiguration.defaultCacheConfig()
@@ -110,7 +129,23 @@ public class RedisConfiguration {
                 .withCacheConfiguration("Car",
                     RedisCacheConfiguration.defaultCacheConfig()
                         .entryTtl(Duration.ofMinutes(10))
-                        .serializeValuesWith(SerializationPair.fromSerializer(car)));
+                        .serializeValuesWith(SerializationPair.fromSerializer(car)))
+                .withCacheConfiguration("WorkstationsSummary",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(5))
+                        .serializeValuesWith(SerializationPair.fromSerializer(workstationSummary)))
+                .withCacheConfiguration("UserCarSummary",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(5))
+                        .serializeValuesWith(SerializationPair.fromSerializer(carsSummary)))
+                .withCacheConfiguration("RecognizerWeekSummary",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(5))
+                        .serializeValuesWith(SerializationPair.fromSerializer(recognizeSummary)))
+                .withCacheConfiguration("UserTypeSummary",
+                    RedisCacheConfiguration.defaultCacheConfig()
+                        .entryTtl(Duration.ofMinutes(5))
+                        .serializeValuesWith(SerializationPair.fromSerializer(userSummary)));
         };
     }
 }

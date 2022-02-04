@@ -1,10 +1,11 @@
 package br.edu.utfpr.tsi.xenon.application.service;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -12,10 +13,11 @@ import static org.mockito.Mockito.when;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserTypeSummary;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.structure.DirectionEnum;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto;
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.DirectionEnum;
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedEnum;
+import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedUserPropertyEnum;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.BasicSpecification;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
@@ -105,7 +107,7 @@ class UserGetterServiceApplicationTest {
         user.setAccessCard(accessCard);
         var params = ParamsQuerySearchUserDto.builder()
             .direction(DirectionEnum.ASC)
-            .sorted(SortedEnum.CREATED)
+            .sorted(SortedUserPropertyEnum.CREATED)
             .size(1L)
             .page(10L)
             .build();
@@ -127,5 +129,36 @@ class UserGetterServiceApplicationTest {
         verify(entityPage).getTotalPages();
         verify(userRepository).findAll(eq(specification), any(Pageable.class));
         verify(getterAllUserSpec).filterBy(params);
+    }
+
+    @Test
+    @DisplayName("Deve retornar um sumário de usuários cadastrados no sistema")
+    void shouldReturnSumaryOfUser() {
+        var summary = new UserTypeSummary() {
+            @Override
+            public Long getServices() {
+                return 10L;
+            }
+
+            @Override
+            public Long getSpeakers() {
+                return 5L;
+            }
+
+            @Override
+            public Long getStudents() {
+                return 2L;
+            }
+        };
+
+        when(userRepository.getUserSummary()).thenReturn(summary);
+
+        var result = userGetterServiceApplication.usersRegistrySummary();
+
+        assertEquals(summary.getServices(), result.getServices());
+        assertEquals(summary.getSpeakers(), result.getSpeakers());
+        assertEquals(summary.getStudents(), result.getStudents());
+
+        verify(userRepository).getUserSummary();
     }
 }

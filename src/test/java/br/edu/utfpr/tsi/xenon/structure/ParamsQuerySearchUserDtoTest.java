@@ -3,11 +3,9 @@ package br.edu.utfpr.tsi.xenon.structure;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.DirectionEnum;
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedEnum;
+import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedUserPropertyEnum;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.Type;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.NullSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -20,8 +18,8 @@ class ParamsQuerySearchUserDtoTest {
     @NullSource
     @DisplayName("Deve retornar o padrão CREATED")
     void shouldReturnCREATEDByDefault(String value) {
-        var sorted = SortedEnum.fromValue(value);
-        assertEquals(SortedEnum.CREATED, sorted);
+        var sorted = SortedUserPropertyEnum.fromValue(value);
+        assertEquals(SortedUserPropertyEnum.CREATED, sorted);
     }
 
     @ParameterizedTest

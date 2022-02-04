@@ -12,15 +12,12 @@ import br.edu.utfpr.tsi.xenon.application.config.property.FilesProperty;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.service.ValidatorFile;
-import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import com.cloudinary.Cloudinary;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -32,8 +29,6 @@ import org.springframework.data.domain.ExampleMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
-import org.springframework.web.multipart.MultipartFile;
 
 @Slf4j
 @Component
@@ -140,12 +135,13 @@ public class CarsAggregator {
             }
 
             var options = Map.of(
-                "resource_type", "pdf",
+                "resource_type", "auto",
                 "public_id", "%d".formatted(carEntity.getId()),
                 "folder", filesProperty.getDocUrl(),
                 "filename_override", TRUE,
                 "use_filename", TRUE,
-                "overwrite", TRUE
+                "overwrite", TRUE,
+                "type", "private"
             );
 
             log.info("Salvando arquivo");
@@ -153,7 +149,13 @@ public class CarsAggregator {
             var publicId = (String)
                 cloudinary.uploader().upload(document, options).get("public_id");
 
+            var isRecoupled = StringUtils.isBlank(carEntity.getDocument());
             carEntity.setDocument(publicId);
+            if (FALSE.equals(isRecoupled)) {
+                log.info("Reupando documento");
+                return;
+            }
+
             changeStateCar.executeProcess(carEntity);
         } catch (IOException e) {
             log.error("Error enviar arquivo para servidor de arquivo");

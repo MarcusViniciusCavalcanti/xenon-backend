@@ -7,7 +7,7 @@ xenon:
       password: xenon
     file:
       avatarUrl: avatar
-      docUrl:
+      docUrl: docs
     redis:
       host: 127.0.0.1
       port: 6379
@@ -27,6 +27,7 @@ xenon:
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
       domain: http://localhost:3000
+      allowedWebsocket: http://localhost:3000
 
 spring:
   jpa:

@@ -1,22 +1,29 @@
 package br.edu.utfpr.tsi.xenon.application.controller;
 
 import br.edu.utfpr.tsi.xenon.application.api.UserApi;
+import br.edu.utfpr.tsi.xenon.application.dto.CarDto;
+import br.edu.utfpr.tsi.xenon.application.dto.DocumentUriDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputAccessUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputUpdateUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputUserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.PageCarWaitingDecisionDto;
+import br.edu.utfpr.tsi.xenon.application.dto.PageUserCarAccessDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ProcessResultDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.application.rules.IsAdmin;
 import br.edu.utfpr.tsi.xenon.application.service.CarApplicationService;
+import br.edu.utfpr.tsi.xenon.application.service.RecognizeServiceApplication;
 import br.edu.utfpr.tsi.xenon.application.service.UserCreatorServiceApplication;
 import br.edu.utfpr.tsi.xenon.application.service.UserDeleterApplicationService;
 import br.edu.utfpr.tsi.xenon.application.service.UserGetterServiceApplication;
 import br.edu.utfpr.tsi.xenon.application.service.UserUpdaterServiceApplication;
+import br.edu.utfpr.tsi.xenon.structure.DirectionEnum;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto;
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.DirectionEnum;
-import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedEnum;
+import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.SortedUserPropertyEnum;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchUserDto.Type;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.MessageSource;
@@ -43,6 +50,7 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
     private final UserGetterServiceApplication userGetterServiceApplication;
     private final UserDeleterApplicationService userDeleterApplicationService;
     private final CarApplicationService carApplicationService;
+    private final RecognizeServiceApplication recognizeServiceApplication;
 
     @Override
     @IsAdmin
@@ -141,7 +149,6 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
         var response = new ProcessResultDto().result(message);
 
         return ResponseEntity.ok(response);
-
     }
 
     @Override
@@ -151,7 +158,7 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
         String sorted, String direction, String nameOrEmail, String type) {
         log.info("Recebendo requisição para recuperar todos usuário.");
         var directionEnum = DirectionEnum.fromValue(direction);
-        var sortedEnum = SortedEnum.fromValue(sorted);
+        var sortedEnum = SortedUserPropertyEnum.fromValue(sorted);
         var params = ParamsQuerySearchUserDto.builder()
             .direction(directionEnum)
             .nameOrEmail(nameOrEmail)
@@ -167,7 +174,7 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
 
     @Override
     @IsAdmin
-    @PatchMapping("/car/{id}/document/approved")
+    @PatchMapping("/car/{id}/approved")
     public ResponseEntity<Void> documentApproved(
         @PathVariable("id") Long id,
         String authorization) {
@@ -180,13 +187,63 @@ public class UserEndpoint implements UserApi, EndpointsTranslator {
 
     @Override
     @IsAdmin
-    @PatchMapping("/car/{id}/document/reproved")
-    public ResponseEntity<Void> documentReproved(Long id, String authorization) {
+    @PatchMapping("/car/{id}/reproved")
+    public ResponseEntity<Void> documentReproved(
+        @PathVariable("id") Long id,
+        String authorization,
+        String acceptLanguage) {
         log.info("Recebendo requisição para reprovar documento");
         log.debug("de id: {}", id);
 
-        carApplicationService.unauthorisedCar(id);
+        var locale = getLocale(acceptLanguage);
+        var reason = getMessage(MessagesMapper.CAR_DOCUMENT_INVALID.getCode(), locale);
+
+        carApplicationService.unauthorisedCar(id, reason);
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @IsAdmin
+    @GetMapping("{id}/cars")
+    public ResponseEntity<List<CarDto>> getCars(@PathVariable("id") Long id, String authorization) {
+        log.info("Recebendo requisição para listar todos carros");
+        var cars = carApplicationService.getAllCarsByUser(id);
+        return ResponseEntity.ok(cars);
+    }
+
+    @Override
+    @IsAdmin
+    @GetMapping("/car/{id}/access")
+    public ResponseEntity<PageUserCarAccessDto> getAllAccess(
+        @PathVariable("id") Long id,
+        Integer size,
+        Integer page) {
+        log.info("Recebendo requisição para listar todos os reconhecimentos");
+        log.debug("de id: {}, size: {}, page: {}", id, size, page);
+        var pageResponse = recognizeServiceApplication.getAllAccessCarUser(id, size, page);
+        return ResponseEntity.ok(pageResponse);
+    }
+
+    @Override
+    @IsAdmin
+    @GetMapping("/{id}/prepare-download/document")
+    public ResponseEntity<DocumentUriDto> downloadDocument(
+        @PathVariable("id") Long id,
+        String authorization) {
+        log.info("Recebendo requisição para processar download de documento");
+        var documentUri = carApplicationService.downloadDocument(id);
+        return ResponseEntity.ok(documentUri);
+    }
+
+    @Override
+    @IsAdmin
+    @GetMapping("/cars/waiting-decision")
+    public ResponseEntity<PageCarWaitingDecisionDto> getAllCarsWaitingDecision(
+        Integer size,
+        Integer page) {
+        log.info("Recebendo requisição para retornar lista de carros aguardando decisão");
+        var pageResponse = carApplicationService.pageCarWaitingDecision(size, page);
+        return ResponseEntity.ok(pageResponse);
     }
 
     @Override

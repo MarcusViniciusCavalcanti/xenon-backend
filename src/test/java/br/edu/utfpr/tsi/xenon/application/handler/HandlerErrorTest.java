@@ -12,6 +12,7 @@ import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.RESOURCE_NOT_FOUND
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.URL_NOT_FOUND;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -20,6 +21,7 @@ import static org.springframework.http.HttpStatus.CONFLICT;
 import static org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR;
 import static org.springframework.http.HttpStatus.UNPROCESSABLE_ENTITY;
 
+import br.edu.utfpr.tsi.xenon.application.dto.ErrorDetailsDto;
 import br.edu.utfpr.tsi.xenon.application.dto.ErrorDto;
 import br.edu.utfpr.tsi.xenon.structure.exception.BusinessException;
 import br.edu.utfpr.tsi.xenon.structure.exception.PlateException;
@@ -29,6 +31,7 @@ import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import java.util.List;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,6 +108,49 @@ class HandlerErrorTest {
         assertEquals("path", error.getPath());
         assertEquals(400, error.getStatusCode());
         assertTrue(error.getDetails().isEmpty());
+    }
+
+    @Test
+    @DisplayName("Deve retornar erro com codigo KNOWN quando MethodArgumentNotValidException")
+    void shouldReturnBadRequestWhenMethodArgumentNotValidExceptionWithMsgEmptyAndCodeKnwon() {
+        var exception = mock(MethodArgumentNotValidException.class);
+        var fieldError = new FieldError(
+            "objectName",
+            "field",
+            null,
+            true,
+            new String[]{"pattern"},
+            null,
+            "defaultMessage");
+
+        when(exception.getFieldErrors()).thenReturn(List.of(fieldError));
+        when(request.getServletPath()).thenReturn("path");
+        when(request.getHeader(HttpHeaders.ACCEPT_LANGUAGE)).thenReturn("pt-BR");
+        when(messageSource.getMessage(
+                eq(ARGUMENT_INVALID.getCode()),
+                any(String[].class),
+                any(Locale.class)))
+            .thenReturn("message");
+
+        when(messageSource.getMessage(
+            eq(KNOWN.getCode()),
+            any(String[].class),
+            any(Locale.class)))
+            .thenReturn("message knwon");
+
+        var result = handlerError.methodArgumentNotValidException(exception, request);
+
+        assertEquals(HttpStatus.BAD_REQUEST, result.getStatusCode());
+        var error = (ErrorDto) result.getBody();
+        assert error != null;
+        assertEquals("message", error.getMessage());
+        assertEquals("path", error.getPath());
+        assertEquals(400, error.getStatusCode());
+
+        Assertions.assertThat(error.getDetails())
+            .hasSize(1)
+            .extracting(ErrorDetailsDto::getDescriptionError)
+            .containsAnyOf("message knwon");
     }
 
     @Test

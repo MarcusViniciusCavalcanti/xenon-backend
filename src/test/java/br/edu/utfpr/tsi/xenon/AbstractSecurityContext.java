@@ -7,8 +7,10 @@ import br.edu.utfpr.tsi.xenon.application.config.property.SecurityProperty;
 import br.edu.utfpr.tsi.xenon.application.dto.InputLoginDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.CarStatus;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.domain.user.state.CarState.CarStateName;
 import br.edu.utfpr.tsi.xenon.structure.repository.RoleRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import io.restassured.builder.RequestSpecBuilder;
@@ -99,6 +101,8 @@ public abstract class AbstractSecurityContext extends AbstractContextTest {
         car.setModel("Gol 1.0");
         user.getCar().add(car);
         car.setUser(user);
+        car.setCarStatus(CarStatus.APPROVED);
+        car.setState(CarStateName.APPROVED.name());
 
         return userRepository.saveAndFlush(user);
     }

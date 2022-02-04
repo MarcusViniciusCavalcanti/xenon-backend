@@ -122,7 +122,8 @@ public class HandlerError implements EndpointsTranslator {
                 var msg = StringUtils.EMPTY;
 
                 if (StringUtils.equalsIgnoreCase(error.getCode(), "pattern")) {
-                    msg = checkCase(error, request.getLocale());
+                    var locale = getLocale(request.getHeader(ACCEPT_LANGUAGE));
+                    msg = checkCase(error, locale);
                 } else {
                     msg = StringUtils.defaultString(error.getDefaultMessage(), StringUtils.EMPTY);
                 }

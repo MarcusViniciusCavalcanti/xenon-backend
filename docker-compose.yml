@@ -1,5 +1,16 @@
 version: '3.6'
 services:
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: xenon
+      MYSQL_USER: xenon
+      MYSQL_PASSWORD: xenon
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
   postgres:
     container_name: xenon_database
     image: postgres:13.4-alpine
@@ -22,7 +33,7 @@ services:
       - 6379
   api:
     container_name: xenon_api
-    image: cavalcanti16/xenon-backend:0.0.4
+    image: cavalcanti16/xenon-backend:0.0.8
     user: application
     depends_on:
       - postgres

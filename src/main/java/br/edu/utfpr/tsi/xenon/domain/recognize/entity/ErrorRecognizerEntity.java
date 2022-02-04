@@ -1,12 +1,15 @@
 package br.edu.utfpr.tsi.xenon.domain.recognize.entity;
 
 import java.time.LocalDateTime;
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.Lob;
+import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import lombok.Data;
 
@@ -33,6 +36,10 @@ public class ErrorRecognizerEntity {
 
     @Column(name = "input")
     private String input;
+
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "recognize_id", referencedColumnName = "id")
+    private RecognizeEntity recognize;
 
     @Lob
     private String trace;

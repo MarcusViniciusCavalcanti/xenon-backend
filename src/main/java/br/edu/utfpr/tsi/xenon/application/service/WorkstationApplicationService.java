@@ -9,6 +9,7 @@ import static java.lang.Boolean.TRUE;
 import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto;
 import br.edu.utfpr.tsi.xenon.application.dto.WorkstationDto.ModeEnum;
+import br.edu.utfpr.tsi.xenon.application.dto.WorkstationSummaryDto;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.ActionChangeWorkstation;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.ActionChangeWorkstation.ActionType;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.UpdateWorkstationMessage;
@@ -17,25 +18,31 @@ import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
+import br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class WorkstationApplicationService {
 
+    private static final String BLANK_REQUEST = "{}";
+
     private final WorkstationRepository workstationRepository;
     private final WorkstationService workstationService;
     private final SendingMessageService senderMessageWebSocketService;
+    private final RecognizerRepository recognizerRepository;
+    private final RestTemplate restTemplate;
 
     @Transactional
     @CacheEvict(cacheNames = {"Workstations", "Workstation", "WorkstationDto"}, allEntries = true)
@@ -53,7 +60,7 @@ public class WorkstationApplicationService {
     }
 
     @Transactional
-    @CachePut(cacheNames = "WorkstationDto", key = "#id")
+    @CacheEvict(cacheNames = {"Workstations", "Workstation", "WorkstationDto"}, allEntries = true)
     public WorkstationDto update(InputWorkstationDto input, Long id) {
         log.info("Iniciando processo de atualização de workstation de id: {}", id);
         log.info("Iniciando processo de atualização de workstation de id: {}, input:{}", id, input);
@@ -96,15 +103,17 @@ public class WorkstationApplicationService {
     @CacheEvict(cacheNames = {"Workstations", "Workstation", "WorkstationDto"}, allEntries = true)
     public void delete(Long id) {
         log.info("Iniciando processo para remover um workstation de id: {}", id);
-        var workstation = getById(id);
-
         log.debug("montando ActionChangeWorkstation");
         var actionChangeDelete = ActionChangeWorkstation.builder()
             .type(ActionType.DELETE)
             .build();
 
+        var workstation = getById(id);
+        var messageRequest = new UpdateWorkstationMessage(actionChangeDelete);
+        log.debug("marcando envio de message com o tipo: {}, pos transação",
+            messageRequest.actionChangeWorkstation());
         senderMessageWebSocketService.sendBeforeTransactionCommit(
-            new UpdateWorkstationMessage(actionChangeDelete),
+            messageRequest,
             CHANGE_WORKSTATION.topicTo(id.toString()));
 
         workstationRepository.delete(workstation);
@@ -116,6 +125,46 @@ public class WorkstationApplicationService {
         return workstationRepository.findAll().stream()
             .map(this::buildDto)
             .toList();
+    }
+
+    @Cacheable(cacheNames = "WorkstationDto", key = "#id")
+    public WorkstationDto getWorkstationById(Long id) {
+        return buildDto(getById(id));
+    }
+
+    @Cacheable(cacheNames = "WorkstationsSummary", unless = "#result.isEmpty()")
+    public List<WorkstationSummaryDto> getWorkstationSummary() {
+        log.info("Executando a busca do sumário da estação de trabalho e reconhecimentos.");
+        return workstationRepository.getWorkstationSummary().stream()
+            .map(workstationAndRecognizeSummary -> new WorkstationSummaryDto()
+                .id(workstationAndRecognizeSummary.getId())
+                .amountAccess(workstationAndRecognizeSummary.getRecognizers())
+                .workstationName(workstationAndRecognizeSummary.getName()))
+            .toList();
+    }
+
+    public void approvedAccess(Long workstationId, Long recognizeId) {
+        recognizerRepository.updateAccessAuthorized(recognizeId);
+        sendRequestOpen(workstationId);
+    }
+
+    public void sendRequestOpen(Long workstationId) {
+        log.info("Executando envio de requisição para estação de trabalho abrir cancela");
+        var workstationEntity = getById(workstationId);
+        var ip = workstationEntity.getIp();
+        var port = workstationEntity.getPort();
+        try {
+            var url = workstationService.buildUriOpen(ip, port);
+            var response = restTemplate.postForEntity(url, BLANK_REQUEST, Void.class);
+
+            if (response.getStatusCode() == HttpStatus.NO_CONTENT) {
+                log.info("requisição enviada com sucesso");
+            } else {
+                log.warn("Requisição não foi enviada: {}", response);
+            }
+        } catch (RestClientException exception) {
+            log.error("Não foi possível enviar requisição: {}", exception.getMessage());
+        }
     }
 
     void validateData(String ip, String name) {

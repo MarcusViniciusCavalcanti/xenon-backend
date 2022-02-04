@@ -1,7 +1,9 @@
 package br.edu.utfpr.tsi.xenon.domain.security.service;
 
-import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.*;
-import static java.lang.Boolean.*;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.CHANGE_PASS_SUCCESSFULLY;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PASS_ACTUAL_NOT_MATCH;
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.PASS_AND_CONFIRM_NOT_MATCH;
+import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
@@ -48,17 +50,17 @@ public class RenewPasswordService {
     public void checkSolicitation(InputRenewPasswordDto input) {
         log.info("Executando processo de solicitação de nova senha para: {}", input.getEmail());
         CompletableFuture.runAsync(() ->
-            accessCardRepository.findByUsername(input.getEmail())
-            .ifPresent(accessCardEntity -> {
-                var token = createToken(input.getEmail());
-                var key = createKey(input.getEmail(), accessCardEntity.getId());
-                var url = createUrl(token, key);
+                accessCardRepository.findByUsername(input.getEmail())
+                    .ifPresent(accessCardEntity -> {
+                        var token = createToken(input.getEmail());
+                        var key = createKey(input.getEmail(), accessCardEntity.getId());
+                        var url = createUrl(token, key);
 
-                saveToken(token, key);
-                log.debug("Enviando e-mail para notificação solicitação de senha.");
-                var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
-                senderEmailService.sendEmail(template);
-            }))
+                        saveToken(token, key);
+                        log.debug("Enviando e-mail para notificação solicitação de senha.");
+                        var template = new MessageRequestRenewPassTemplate(input.getEmail(), url);
+                        senderEmailService.sendEmail(template);
+                    }))
             .handleAsync((result, throwable) ->
                 catchError(result, throwable, "Erro na solicitação de pedido de senha {}"));
     }
@@ -72,18 +74,20 @@ public class RenewPasswordService {
             log.debug("Recuperando token.");
             var expectedToken = tokenRedisRepository.findTokenByKey(decodeParams.key);
 
+            log.debug("Validando toke da chave: {}", decodeParams.key());
             if (TRUE.equals(TokenApplication.newInstance()
-                .validateToken(decodeParams.token, expectedToken))) {
+                .validateToken(decodeParams.token(), expectedToken))) {
 
                 log.debug("recuperando access card.");
                 var email = getEmail(decodeParams);
                 accessCardRepository.findByUsername(email)
                     .ifPresentOrElse(accessCardEntity -> {
                         log.info("Criando nova senha.");
-                        var pass = CreatorPasswordService
-                            .newInstance(cryptPasswordEncoder)
-                            .createPass();
+                        var crytorService = CreatorPasswordService
+                            .newInstance(cryptPasswordEncoder);
+                        var pass = crytorService.createPass();
 
+                        log.debug("Senha encryptado com {}", crytorService.cryptPasswordEncoder());
                         log.info("enviando email.");
                         var template = new MessageRenewPassTemplate(pass.pass(), email);
                         senderEmailService.sendEmail(template);
@@ -100,7 +104,8 @@ public class RenewPasswordService {
             catchError(result, throwable, "Erro na confirmação de pedido de senha {}"));
     }
 
-    public ProcessResultDto changePassword(AccessCardEntity accessCardEntity, InputChangePasswordDto input) {
+    public ProcessResultDto changePassword(AccessCardEntity accessCardEntity,
+        InputChangePasswordDto input) {
         log.info("Executando processo para troca de senha");
 
         checkActualPassword(accessCardEntity, input.getActualPassword());
