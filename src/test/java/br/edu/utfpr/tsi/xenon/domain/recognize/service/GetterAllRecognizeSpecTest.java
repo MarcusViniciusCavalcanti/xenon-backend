@@ -32,9 +32,7 @@ class GetterAllRecognizeSpecTest {
 
     @Test
     @DisplayName("Deve retornar reconhecimento com base no nome do motorista")
-    @ResourceLocks(value = {
-        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository"),
-    })
+    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository")
     void shouldReturnRecognizerBySpecificationByDriveName() {
         var driveName = "Driver Name";
 
@@ -53,9 +51,7 @@ class GetterAllRecognizeSpecTest {
 
     @Test
     @DisplayName("Deve retornar reconhecimento com base no campo only error")
-    @ResourceLocks(value = {
-        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository"),
-    })
+    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository")
     void shouldReturnRecognizerBySpecificationByOnlyError() {
         var driveName = "Name";
 
@@ -74,9 +70,7 @@ class GetterAllRecognizeSpecTest {
 
     @Test
     @DisplayName("Deve retornar reconhecimento com base no nome do motorista e do campo only error")
-    @ResourceLocks(value = {
-        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository"),
-    })
+    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository")
     void shouldReturnRecognizerBySpecificationByOnlyErrorAndDriveName() {
         var driveName = "Driver Name";
 

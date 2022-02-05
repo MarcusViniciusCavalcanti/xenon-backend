@@ -11,6 +11,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.PrePersist;
 import javax.persistence.Table;
 import lombok.Data;
+import lombok.ToString;
 
 @Entity
 @Table(name = "recognizers")
@@ -45,6 +46,7 @@ public class RecognizeEntity {
     @Column(name = "driver_name")
     private String driverName;
 
+    @ToString.Exclude
     @OneToOne(mappedBy = "recognize")
     private ErrorRecognizerEntity errorRecognizer;
 

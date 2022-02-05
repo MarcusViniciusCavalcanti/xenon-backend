@@ -22,6 +22,6 @@ public class CarStateReproved extends CarState {
 
     @Override
     public void executeProcess(CarEntity carEntity) {
-        nextState();
+        throw new IllegalStateException("Não é possível processar o estado, pois ele é final");
     }
 }

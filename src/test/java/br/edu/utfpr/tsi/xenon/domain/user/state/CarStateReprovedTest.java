@@ -27,7 +27,7 @@ class CarStateReprovedTest {
         var illegalStateException =
             assertThrows(IllegalStateException.class, () -> state.executeProcess(car));
 
-        assertEquals("Não é possível avançar o estado quando o estado é %s".formatted(CarStateName.REPROVED), illegalStateException.getMessage());
+        assertEquals("Não é possível processar o estado, pois ele é final", illegalStateException.getMessage());
     }
 
     @Test
@@ -48,6 +48,6 @@ class CarStateReprovedTest {
         var carStateReproved = new CarStateReproved();
         var exception  = assertThrows(IllegalStateException.class,
             () -> carStateReproved.executeProcess(new CarEntity()));
-        assertEquals("Não é possível avançar o estado quando o estado é REPROVED", exception.getMessage());
+        assertEquals("Não é possível processar o estado, pois ele é final", exception.getMessage());
     }
 }

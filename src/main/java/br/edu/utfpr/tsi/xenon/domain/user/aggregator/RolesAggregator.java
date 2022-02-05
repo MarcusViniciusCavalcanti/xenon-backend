@@ -5,7 +5,6 @@ import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
 import br.edu.utfpr.tsi.xenon.structure.repository.RoleRepository;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -41,7 +40,7 @@ public class RolesAggregator {
         var allowedRoles = Types.getOrDefaultType(typeUser.name()).allowedRoles;
         var rolesIds = ids.stream()
             .filter(allowedRoles::contains)
-            .collect(Collectors.toList());
+            .toList();
 
         var roles = repository.findAllById(rolesIds);
         accessCard.setRoleEntities(roles);

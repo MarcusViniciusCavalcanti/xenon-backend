@@ -2520,6 +2520,7 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
     InputNewCar:
       type: object
       required:
@@ -2528,6 +2529,8 @@ components:
       properties:
         model:
           type: string
+          nullable: false
+          x-constraints: "@NotBlank"
           description: Modelo do carro
           example: Gol 1.0
         plate:
@@ -2552,6 +2555,7 @@ components:
           minLength: 8
           maxLength: 16
           nullable: false
+          x-constraints: "@NotBlank"
         password:
           type: string
           description: Nova senha
@@ -2559,6 +2563,7 @@ components:
           minimum: 8
           maximum: 16
           nullable: false
+          x-constraints: "@NotBlank"
         confirmPassword:
           type: string
           description: Confirmação da senha.
@@ -2566,6 +2571,7 @@ components:
           minLength: 8
           maxLength: 16
           nullable: false
+          x-constraints: "@NotBlank"
     InputRemoveCar:
       type: object
       required:

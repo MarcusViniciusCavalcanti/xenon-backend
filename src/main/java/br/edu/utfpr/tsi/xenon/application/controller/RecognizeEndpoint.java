@@ -4,11 +4,14 @@ import br.edu.utfpr.tsi.xenon.application.api.RecognizerApi;
 import br.edu.utfpr.tsi.xenon.application.dto.ErrorRecognizerDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputRecognizerDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PageRecognizerDto;
+import br.edu.utfpr.tsi.xenon.application.dto.PlatesDto;
 import br.edu.utfpr.tsi.xenon.application.rules.IsAdmin;
 import br.edu.utfpr.tsi.xenon.application.service.RecognizeServiceApplication;
 import br.edu.utfpr.tsi.xenon.structure.DirectionEnum;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchRecognizeDto;
 import br.edu.utfpr.tsi.xenon.structure.ParamsQuerySearchRecognizeDto.SortedRecognizePropertyEnum;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import javax.servlet.ServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -32,10 +35,12 @@ public class RecognizeEndpoint implements RecognizerApi {
     @PostMapping("/receive-recognizer/{key}")
     public ResponseEntity<Void> receiveRecognizer(@PathVariable("key") String key,
         InputRecognizerDto inputRecognizerDto) {
-        log.info("Recebendo {} reconhecimentos", inputRecognizerDto.getRecognizers().size());
+        log.info("Recebendo requisição de reconhecimentos.");
         log.debug("Input: {}", inputRecognizerDto);
 
-        if (Boolean.FALSE.equals(inputRecognizerDto.getRecognizers().isEmpty())) {
+        var recognizers = inputRecognizerDto.getRecognizers();
+        if (Objects.nonNull(recognizers) && Boolean.FALSE.equals(recognizers.isEmpty())) {
+            log.info("Recebendo {} reconhecimentos", recognizers.size());
             var ip = getIpRequest();
             recognizeServiceApplication.receive(inputRecognizerDto, key, ip);
         }
