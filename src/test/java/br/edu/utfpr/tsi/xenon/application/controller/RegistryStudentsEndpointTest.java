@@ -1,5 +1,6 @@
 package br.edu.utfpr.tsi.xenon.application.controller;
 
+import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.*;
 import static io.restassured.RestAssured.given;
 import static io.restassured.http.ContentType.JSON;
 import static io.restassured.mapper.ObjectMapperType.JACKSON_2;
@@ -98,16 +99,16 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar error de validações de campos")
     void shouldReturnErrorBadRequest() {
+        var locale = Locale.US;
         var message =
-            messageSource.getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null,
-                Locale.forLanguageTag("en-US"));
+            messageSource.getMessage(ARGUMENT_INVALID.getCode(), null, locale);
 
         var input = new InputRegistryStudentDto();
 
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", Locale.forLanguageTag("en-US"))
+            .header("Accept-Language", locale.toLanguageTag())
             .contentType(JSON)
             .body(input, JACKSON_2)
             .expect()
@@ -138,10 +139,10 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .plateCar(plateCar);
 
         var message = messageSource
-            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+            .getMessage(ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
 
         var descriptionError = messageSource
-            .getMessage(MessagesMapper.PLATE_INVALID.getCode(),
+            .getMessage(PLATE_INVALID.getCode(),
                 new String[] {input.getPlateCar()}, Locale.getDefault());
 
         given()
@@ -181,7 +182,7 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .plateCar(faker.bothify("???-####", Boolean.TRUE));
 
         var message = messageSource
-            .getMessage(MessagesMapper.EMAIL_EXIST.getCode(),
+            .getMessage(EMAIL_EXIST.getCode(),
                 new String[] {input.getEmail()}, Locale.getDefault());
 
         given()
@@ -215,10 +216,10 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .plateCar(faker.bothify("???-####", Boolean.TRUE));
 
         var message = messageSource
-            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+            .getMessage(ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
 
        var descriptionError = messageSource
-            .getMessage(MessagesMapper.EMAIL_NOT_INSTITUTIONAL.getCode(),
+            .getMessage(EMAIL_NOT_INSTITUTIONAL.getCode(),
                 new String[] {input.getEmail()}, Locale.getDefault());
 
         given()
@@ -252,10 +253,10 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
             .plateCar(faker.bothify("???-####", Boolean.TRUE));
 
         var message = messageSource
-            .getMessage(MessagesMapper.ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
+            .getMessage(ARGUMENT_INVALID.getCode(), null, Locale.getDefault());
 
         var descriptionError = messageSource
-            .getMessage(MessagesMapper.EMAIL_INVALID.getCode(),
+            .getMessage(EMAIL_INVALID.getCode(),
                 new String[] {input.getEmail()}, Locale.getDefault());
 
         given()
@@ -312,7 +313,7 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
         );
 
         var message = messageSource
-            .getMessage(MessagesMapper.ACTIVATE_ACCOUNT.getCode(),
+            .getMessage(ACTIVATE_ACCOUNT.getCode(),
                 new String[0], Locale.getDefault());
 
         given()

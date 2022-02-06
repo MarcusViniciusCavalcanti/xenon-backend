@@ -37,8 +37,11 @@ public class UserCreatorServiceApplication implements UserServiceApplication {
         log.info("Iniciando processo de registro de novo usuário");
         log.info("Iniciando processo de registro de novo usuário, {}", input);
 
+        log.debug("Verificando nome");
         checkNameExist(input.getName());
+        log.debug("Verifica email");
         checkIsEmail(input.getEmail());
+        log.debug("Verifica se email já existe");
         checkExistEmail(input.getEmail());
 
         if (TypeUserEnum.STUDENTS == input.getTypeUser()) {

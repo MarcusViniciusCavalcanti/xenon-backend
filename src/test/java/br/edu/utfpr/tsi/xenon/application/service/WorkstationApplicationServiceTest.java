@@ -19,6 +19,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputWorkstationDto.ModeEnum;
 import br.edu.utfpr.tsi.xenon.domain.notification.model.UpdateWorkstationMessage;
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SenderMessageWebSocketService;
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SendingMessageService;
+import br.edu.utfpr.tsi.xenon.domain.recognize.entity.RecognizeEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorstationAndRecognizeSummary;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
@@ -383,6 +384,7 @@ class WorkstationApplicationServiceTest {
             .when(recognizerRepository)
             .updateAccessAuthorized(1L);
 
+        when(recognizerRepository.findById(anyLong())).thenReturn(Optional.of(new RecognizeEntity()));
         configureSendRequestMock(workstation, responseEntity, HttpStatus.NO_CONTENT);
 
         workstationApplicationService.approvedAccess(1L, 1L);

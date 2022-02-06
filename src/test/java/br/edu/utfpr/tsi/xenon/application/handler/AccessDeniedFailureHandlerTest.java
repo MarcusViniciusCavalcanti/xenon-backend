@@ -1,6 +1,7 @@
 package br.edu.utfpr.tsi.xenon.application.handler;
 
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.ACCESS_DENIED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,8 @@ class AccessDeniedFailureHandlerTest {
         when(request.getLocale()).thenReturn(Locale.ROOT);
 
         handler.handle(request, response, new AccessDeniedException(""));
+
+        assertEquals(messageSource, handler.messageSource());
 
         verify(response).setHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE);
         verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);

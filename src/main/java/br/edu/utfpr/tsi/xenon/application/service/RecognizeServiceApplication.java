@@ -75,9 +75,10 @@ public class RecognizeServiceApplication {
                 .confidence(recognizeEntity.getConfidence())
                 .driverName(recognizeEntity.getDriverName())
                 .epochTime(recognizeEntity.getEpochTime())
-                .errorDetails(
-                    Objects.nonNull(recognizeEntity.getErrorRecognizer())
-                        ? recognizeEntity.getErrorRecognizer().getId() : null)
+                .plate(recognizeEntity.getPlate())
+                .driverName(recognizeEntity.getDriverName())
+                .hasError(recognizeEntity.getHasError())
+                .originIp(recognizeEntity.getOriginIp())
                 .id(recognizeEntity.getId()))
             .toList();
 
@@ -100,6 +101,7 @@ public class RecognizeServiceApplication {
         return errorRecognizerRepository.findErrorRecognizerEntityByRecognizeId(id)
             .map(errorRecognizer -> new ErrorRecognizerDto()
                 .errorMessage(errorRecognizer.getErrorMessage())
+                .input(errorRecognizer.getInput())
                 .date(errorRecognizer.getDate())
                 .originIp(errorRecognizer.getOriginIp())
                 .workstationName(errorRecognizer.getWorkstationName())

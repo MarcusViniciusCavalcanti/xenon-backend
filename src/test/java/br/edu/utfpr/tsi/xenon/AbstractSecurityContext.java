@@ -16,6 +16,7 @@ import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.specification.RequestSpecification;
 import java.util.List;
+import javax.annotation.PreDestroy;
 import org.junit.jupiter.api.parallel.ResourceLock;
 import org.junit.jupiter.api.parallel.ResourceLocks;
 import org.springframework.beans.factory.annotation.Autowired;

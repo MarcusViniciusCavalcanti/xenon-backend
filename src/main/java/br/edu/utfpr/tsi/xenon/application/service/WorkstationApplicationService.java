@@ -144,8 +144,13 @@ public class WorkstationApplicationService {
     }
 
     public void approvedAccess(Long workstationId, Long recognizeId) {
-        recognizerRepository.updateAccessAuthorized(recognizeId);
-        sendRequestOpen(workstationId);
+        recognizerRepository.findById(recognizeId)
+            .ifPresentOrElse(recognizeEntity -> {
+                recognizerRepository.updateAccessAuthorized(recognizeId);
+                sendRequestOpen(workstationId);
+            }, () -> {
+                throw new ResourceNotFoundException("reconhecimento", "id");
+            });
     }
 
     public void sendRequestOpen(Long workstationId) {

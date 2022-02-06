@@ -2260,12 +2260,6 @@ components:
           type: boolean
           description: Caso um erro de processo foi gerado
           example: false
-        errorDetails:
-          type: integer
-          format: int64
-          description: |-
-            Caso um erro de processamento foi ocasionado no momento do reconhecimento, este campo será preenchido
-            indicando o id do error. Para consulta posterior.
         accessGranted:
           type: boolean
           description: |-
@@ -2482,18 +2476,21 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
         password:
           description: Senha da credencial do usuário
           type: string
           nullable: false
           minimum: 5
           maximum: 8
+          x-constraints: "@NotBlank"
         confirmPassword:
           description: Mesma senha informada no campo senha, para confirmação.
           type: string
           minimum: 5
           maximum: 8
           nullable: false
+          x-constraints: "@NotBlank"
         modelCar:
           description: Modelo do carro, este campo é opcional.
           type: string
@@ -2501,6 +2498,7 @@ components:
           minimum: 3
           example: Gol 1.0
           nullable: false
+          x-constraints: "@NotBlank"
         plateCar:
           description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
           type: string
@@ -2604,9 +2602,10 @@ components:
           description: nome do usuário
           example: Fulano de Tal
           type: string
-          minimum: 10
-          maximum: 255
+          minLength: 5
+          maxLength: 255
           nullable: false
+          x-constraints: "@NotBlank"
         typeUser:
           type: string
           example: SERVICE
@@ -2637,21 +2636,6 @@ components:
           type: boolean
           description: define o acesso do usuário ao estacionamento
           example: true
-        modelCar:
-          type: string
-          description: Modelo do carro
-          example: Gol 1.0
-          minLength: 5
-          maxLength: 255
-          nullable: true
-        plateCar:
-          type: string
-          description: placa do carro, placas no formato mercosu são aceitas
-          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
-          example: ABC-1A34
-          minLength: 7
-          maxLength: 8
-          nullable: true
     InputUpdateUser:
       required:
         - email
@@ -2674,6 +2658,7 @@ components:
           minimum: 10
           maximum: 255
           nullable: false
+          x-constraints: "@NotBlank"
         typeUser:
           type: string
           example: SERVICE
@@ -2726,6 +2711,7 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
     InputWorkstation:
       type: object
       required:
@@ -2753,6 +2739,7 @@ components:
           minimum: 5
           example: Portão 01
           nullable: false
+          x-constraints: "@NotBlank"
         mode:
           type: string
           enum:
@@ -2810,6 +2797,22 @@ components:
     ErrorRecognizer:
       type: object
       properties:
+        input:
+          type: string
+          description: |-
+            Dados do reconhecimento que foi enviado, o dado informado será uma representação do JSON
+            recebido na requisição, por exemplo:
+            ````
+              {
+                "recognizers": [
+                  {
+                     "plate": "ABC-1234",
+                      "confidence": 89.01812
+                  }
+                ]
+              }
+            ````
+          example: "{}"
         errorMessage:
           type: string
           description: Message da causa do error.

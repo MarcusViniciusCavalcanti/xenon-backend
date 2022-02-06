@@ -21,9 +21,9 @@ public interface UserRepository
 
     @Query("""
         SELECT
-            SUM(CASE WHEN u.typeUser = 'STUDENTS' then 1 else 0 end) as services,
+            SUM(CASE WHEN u.typeUser = 'STUDENTS' then 1 else 0 end) as students,
             SUM(CASE WHEN u.typeUser = 'SPEAKER' then 1 else 0 end) as speakers,
-            SUM(CASE WHEN u.typeUser = 'SERVICE' then 1 else 0 end) as students
+            SUM(CASE WHEN u.typeUser = 'SERVICE' then 1 else 0 end) as services
         FROM UserEntity u
         """)
     UserTypeSummary getUserSummary();

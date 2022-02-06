@@ -21,6 +21,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+@ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository")
 @DataJpaTest
 @Testcontainers
 @ContextConfiguration(initializers = InitiliazerContext.class)
@@ -32,7 +33,6 @@ class GetterAllRecognizeSpecTest {
 
     @Test
     @DisplayName("Deve retornar reconhecimento com base no nome do motorista")
-    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository")
     void shouldReturnRecognizerBySpecificationByDriveName() {
         var driveName = "Driver Name";
 
@@ -70,7 +70,6 @@ class GetterAllRecognizeSpecTest {
 
     @Test
     @DisplayName("Deve retornar reconhecimento com base no nome do motorista e do campo only error")
-    @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository")
     void shouldReturnRecognizerBySpecificationByOnlyErrorAndDriveName() {
         var driveName = "Driver Name";
 

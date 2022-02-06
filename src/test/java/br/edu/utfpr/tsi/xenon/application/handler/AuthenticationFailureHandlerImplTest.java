@@ -1,6 +1,7 @@
 package br.edu.utfpr.tsi.xenon.application.handler;
 
 import static br.edu.utfpr.tsi.xenon.structure.MessagesMapper.UNAUTHORIZED;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -48,6 +49,8 @@ class AuthenticationFailureHandlerImplTest {
         when(request.getLocale()).thenReturn(Locale.ROOT);
 
         handler.commence(request, response, new AccountExpiredException(""));
+
+        assertEquals(messageSource, handler.messageSource());
 
         verify(response).addHeader(CONTENT_TYPE, APPLICATION_JSON_VALUE);
         verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);

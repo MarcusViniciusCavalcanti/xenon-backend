@@ -34,6 +34,7 @@ import br.edu.utfpr.tsi.xenon.application.dto.InputRemoveCarDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto.TypeEnum;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.CarStatus;
+import br.edu.utfpr.tsi.xenon.domain.user.state.CarState.CarStateName;
 import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import com.cloudinary.Cloudinary;
@@ -46,6 +47,7 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -402,6 +404,59 @@ class ProfileEndpointTest extends AbstractSecurityContext {
         deleteUser(user);
     }
 
+    @Test
+    @DisplayName("Deve retornar erro quando cadastro de carro atingiu o limite de 5")
+    void shouldReturnErrorWhenRegisterCarExcceded() {
+        var user = createOperator();
+        var input = new InputLoginDto()
+            .password(PASS)
+            .email(user.getAccessCard().getUsername());
+
+        setAuthentication(input);
+
+        var cars = IntStream.range(0, 5)
+            .mapToObj(index -> {
+                var car = new CarEntity();
+                car.setPlate(faker.bothify("???-####", TRUE));
+                car.setModel("Gol 1.0");
+                user.getCar().add(car);
+                car.setUser(user);
+                car.setCarStatus(CarStatus.APPROVED);
+                car.setState(CarStateName.APPROVED.name());
+                return car;
+            }).toList();
+
+        carRepository.saveAllAndFlush(cars);
+
+        var faker = Faker.instance();
+        var inputNewCarDto = new InputNewCarDto()
+            .model(faker.rockBand().name())
+            .plate(faker.bothify("???-####", TRUE));
+
+        var message = messageSource.getMessage(
+            MessagesMapper.LIMIT_EXCEEDED_CAR.getCode(),
+            new String[] {inputNewCarDto.getPlate()},
+            Locale.getDefault()
+        );
+
+        given(specAuthentication)
+            .accept(MediaType.APPLICATION_JSON_VALUE)
+            .contentType(MediaType.APPLICATION_JSON_VALUE)
+            .header("Accept-Language", Locale.getDefault().getLanguage())
+            .contentType(JSON)
+            .body(inputNewCarDto, JACKSON_2)
+            .expect()
+            .statusCode(UNPROCESSABLE_ENTITY.value())
+            .body("statusCode", is(UNPROCESSABLE_ENTITY.value()))
+            .body("message", is(message))
+            .body("path", is("/profile/include-new-car"))
+            .when()
+            .patch(URL_INCLUDE_NEW_CAR).andReturn().prettyPrint();
+
+        deleteUser(user);
+        carRepository.deleteAll();
+    }
+
     @ParameterizedTest
     @MethodSource("providerCarPlateInvalid")
     @DisplayName("Não deve remover carro com quando placa informa esta invalida")
@@ -620,6 +675,8 @@ class ProfileEndpointTest extends AbstractSecurityContext {
             .body("path", is("/profile/change-password"))
             .when()
             .post(URL_CHANGE_PASSWORD);
+
+        deleteUser(user);
     }
 
     @Test
@@ -763,7 +820,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
         var message = messageSource.getMessage(
             MessagesMapper.FILE_ALLOWED.getCode(),
             new String[] {"pdf"},
-            Locale.getDefault()
+            Locale.US
         );
 
         given(specAuthentication)
@@ -824,7 +881,7 @@ class ProfileEndpointTest extends AbstractSecurityContext {
         var message = messageSource.getMessage(
             MessagesMapper.KNOWN.getCode(),
             new String[0],
-            Locale.getDefault()
+            Locale.US
         );
 
         given(specAuthentication)
