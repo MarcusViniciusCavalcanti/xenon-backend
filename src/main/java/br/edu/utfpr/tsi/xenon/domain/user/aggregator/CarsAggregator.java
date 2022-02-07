@@ -18,6 +18,7 @@ import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import com.cloudinary.Cloudinary;
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -78,23 +79,7 @@ public class CarsAggregator {
             .replace("-", "")
             .replace("_", "");
 
-        if (REGEX_PLATE.asPredicate().test(value)) {
-            var plateFormatted = formatterPlate(value);
-
-            existCarByPlate(plateFormatted);
-
-            var car = new CarEntity();
-            car.setModel(modelCar);
-            car.setPlate(plateFormatted);
-            car.setNumberAccess(0);
-            car.setUser(user);
-            car.setAuthorisedAccess(FALSE);
-
-            changeStateCar.executeProcess(car);
-            user.includeLastCar(car);
-        } else {
-            throw new PlateException(plateCar, PLATE_INVALID.getCode());
-        }
+        processCarEntity(user, modelCar, plateCar, value);
     }
 
     public String normalizePlate(String value) {
@@ -134,16 +119,7 @@ public class CarsAggregator {
                 throw new BusinessException(400, FILE_ALLOWED.getCode(), "pdf");
             }
 
-            var options = Map.of(
-                "resource_type", "auto",
-                "public_id", "%d".formatted(carEntity.getId()),
-                "folder", filesProperty.getDocUrl(),
-                "filename_override", TRUE,
-                "use_filename", TRUE,
-                "overwrite", TRUE,
-                "type", "private"
-            );
-
+            var options = buildOptions(carEntity);
             log.info("Salvando arquivo");
             log.debug("Enviando arquivo para store com os parâmentros: {}", options);
             var publicId = (String)
@@ -161,6 +137,37 @@ public class CarsAggregator {
             log.error("Error enviar arquivo para servidor de arquivo");
             throw new BusinessException(422, KNOWN.getCode());
         }
+    }
 
+    private Map<String, ? extends Serializable> buildOptions(CarEntity carEntity) {
+        return Map.of(
+            "resource_type", "auto",
+            "public_id", "%d".formatted(carEntity.getId()),
+            "folder", filesProperty.getDocUrl(),
+            "filename_override", TRUE,
+            "use_filename", TRUE,
+            "overwrite", TRUE,
+            "type", "private"
+        );
+    }
+
+    private void processCarEntity(UserEntity user, String modelCar, String plateCar, String value) {
+        if (REGEX_PLATE.asPredicate().test(value)) {
+            var plateFormatted = formatterPlate(value);
+
+            existCarByPlate(plateFormatted);
+
+            var car = new CarEntity();
+            car.setModel(modelCar);
+            car.setPlate(plateFormatted);
+            car.setNumberAccess(0);
+            car.setUser(user);
+            car.setAuthorisedAccess(FALSE);
+
+            changeStateCar.executeProcess(car);
+            user.includeLastCar(car);
+        } else {
+            throw new PlateException(plateCar, PLATE_INVALID.getCode());
+        }
     }
 }

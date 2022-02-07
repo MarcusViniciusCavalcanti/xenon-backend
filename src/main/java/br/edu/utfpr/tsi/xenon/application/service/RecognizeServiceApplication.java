@@ -18,6 +18,7 @@ import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.ErrorRecognizerRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository;
 import java.util.Objects;
+import java.util.function.Function;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.Cacheable;
@@ -62,7 +63,6 @@ public class RecognizeServiceApplication {
         var sort = Sort.by(
             Sort.Direction.fromString(params.getDirection().name()), params.getSorted().getValue());
         var pageable = PageRequest.of(params.getPage(), params.getSize(), sort);
-
         log.debug("Enviando busca com os seguintes paramentros: {}", pageable);
         var page = recognizerRepository.findAll(filter, pageable);
 
@@ -70,16 +70,7 @@ public class RecognizeServiceApplication {
         var result = page
             .getContent()
             .stream()
-            .map(recognizeEntity -> new RecognizerDto()
-                .accessGranted(recognizeEntity.getAccessGranted())
-                .confidence(recognizeEntity.getConfidence())
-                .driverName(recognizeEntity.getDriverName())
-                .epochTime(recognizeEntity.getEpochTime())
-                .plate(recognizeEntity.getPlate())
-                .driverName(recognizeEntity.getDriverName())
-                .hasError(recognizeEntity.getHasError())
-                .originIp(recognizeEntity.getOriginIp())
-                .id(recognizeEntity.getId()))
+            .map(getRecognizeEntityRecognizer())
             .toList();
 
         log.info("Preparando resposta.");
@@ -91,7 +82,6 @@ public class RecognizeServiceApplication {
         pageRecognizer.page(page.getNumber());
         pageRecognizer.totalElements(page.getTotalElements());
         pageRecognizer.setTotalPage(page.getTotalPages());
-
         return pageRecognizer;
     }
 
@@ -124,11 +114,7 @@ public class RecognizeServiceApplication {
 
         log.debug("Encontrado {} de reconhecimentos", pageable.getSize());
         var content = pageable.getContent().stream()
-            .map(recognizeEntity -> new UserCarAccessDto()
-                .carPlate(recognizeEntity.getPlate())
-                .epochTime(recognizeEntity.getEpochTime())
-                .confidence(recognizeEntity.getConfidence())
-                .grandAccess(recognizeEntity.getAccessGranted()))
+            .map(getRecognizeEntityUserCarAccessDto())
             .toList();
 
         log.debug("Montando resposta");
@@ -140,7 +126,6 @@ public class RecognizeServiceApplication {
         pageUserCarAccessDto.page(pageable.getNumber());
         pageUserCarAccessDto.totalElements(pageable.getTotalElements());
         pageUserCarAccessDto.setTotalPage(pageable.getTotalPages());
-
         return pageUserCarAccessDto;
     }
 
@@ -148,7 +133,6 @@ public class RecognizeServiceApplication {
     public RecognizerSummaryDto getRecognizerSummary() {
         log.info("Processando busca para recuperar sumário de reconhecimento por semana");
         var summary = recognizerRepository.getRecognizerSummaryWeek();
-
         log.debug("enviado o sumário criado dos reconhecimentos por semana. {}", summary);
         return new RecognizerSummaryDto()
             .seventhDayBefore(summary.getSevenDay())
@@ -159,5 +143,26 @@ public class RecognizeServiceApplication {
             .secondDayBefore(summary.getTwoDay())
             .firstDayBefore(summary.getOneDay())
             .now(summary.getNow());
+    }
+
+    private Function<RecognizeEntity, UserCarAccessDto> getRecognizeEntityUserCarAccessDto() {
+        return recognizeEntity -> new UserCarAccessDto()
+            .carPlate(recognizeEntity.getPlate())
+            .epochTime(recognizeEntity.getEpochTime())
+            .confidence(recognizeEntity.getConfidence())
+            .grandAccess(recognizeEntity.getAccessGranted());
+    }
+
+    private Function<RecognizeEntity, RecognizerDto> getRecognizeEntityRecognizer() {
+        return recognizeEntity -> new RecognizerDto()
+            .accessGranted(recognizeEntity.getAccessGranted())
+            .confidence(recognizeEntity.getConfidence())
+            .driverName(recognizeEntity.getDriverName())
+            .epochTime(recognizeEntity.getEpochTime())
+            .plate(recognizeEntity.getPlate())
+            .driverName(recognizeEntity.getDriverName())
+            .hasError(recognizeEntity.getHasError())
+            .originIp(recognizeEntity.getOriginIp())
+            .id(recognizeEntity.getId());
     }
 }
