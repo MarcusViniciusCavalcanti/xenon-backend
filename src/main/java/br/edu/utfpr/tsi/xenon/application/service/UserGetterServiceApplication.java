@@ -3,6 +3,7 @@ package br.edu.utfpr.tsi.xenon.application.service;
 import br.edu.utfpr.tsi.xenon.application.config.bean.SpecificationConfiguration;
 import br.edu.utfpr.tsi.xenon.application.dto.PageUserDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UsersRegistrySummaryDto;
 import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.domain.user.factory.UserFactory;
@@ -30,7 +31,7 @@ public class UserGetterServiceApplication {
     public UserGetterServiceApplication(
         UserRepository userRepository,
         SecurityContextUserService securityContextUserService,
-        @Qualifier(SpecificationConfiguration.QUALIFIER_GET_ALL_SPEC)
+        @Qualifier(SpecificationConfiguration.QUALIFIER_GET_ALL_USER)
             BasicSpecification<UserEntity, ParamsQuerySearchUserDto> getterAllUserSpec) {
         this.userRepository = userRepository;
         this.securityContextUserService = securityContextUserService;
@@ -84,7 +85,7 @@ public class UserGetterServiceApplication {
 
         var content = page.getContent().stream()
             .map(userEntity -> UserFactory.getInstance().buildUserDto(userEntity))
-            .collect(Collectors.toList());
+            .toList();
 
         var pageUser = new PageUserDto().items(content);
         pageUser.setDirection(params.getDirection().name());
@@ -95,5 +96,14 @@ public class UserGetterServiceApplication {
         pageUser.setTotalPage(page.getTotalPages());
 
         return pageUser;
+    }
+
+    @Cacheable(cacheNames = "UserTypeSummary")
+    public UsersRegistrySummaryDto usersRegistrySummary() {
+        var summary = userRepository.getUserSummary();
+        return new UsersRegistrySummaryDto()
+            .students(summary.getStudents())
+            .services(summary.getServices())
+            .speakers(summary.getSpeakers());
     }
 }

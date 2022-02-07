@@ -10,9 +10,13 @@ public class EmailErrorException extends RuntimeException {
     @Getter
     private final String code;
 
-    public EmailErrorException(String email, String code) {
+    @Getter
+    private final Integer httpStatusCode;
+
+    public EmailErrorException(String email, String code, Integer httpStatusCode) {
         super("E-mail %s está inválido, code de error: %s".formatted(email, code));
         this.email = email;
         this.code = code;
+        this.httpStatusCode = httpStatusCode;
     }
 }

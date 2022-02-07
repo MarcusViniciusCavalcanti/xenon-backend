@@ -10,12 +10,15 @@ import static org.mockito.Mockito.when;
 import br.edu.utfpr.tsi.xenon.application.dto.InputChangePasswordDto;
 import br.edu.utfpr.tsi.xenon.application.dto.InputLoginDto;
 import br.edu.utfpr.tsi.xenon.application.dto.TokenDto;
+import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.service.AccessTokenService;
 import br.edu.utfpr.tsi.xenon.domain.security.service.SecurityContextUserService;
 import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.javafaker.Faker;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -43,6 +46,9 @@ class SecurityApplicationServiceTest {
 
     @Mock
     private UserRepository userRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private SecurityApplicationService service;

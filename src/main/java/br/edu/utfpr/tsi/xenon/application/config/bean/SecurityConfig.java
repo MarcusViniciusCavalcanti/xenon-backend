@@ -42,7 +42,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private static final String[] GET_URL_PUBLIC = new String[] {
         "/request-renew-pass/**",
         "/activate-registry/**",
-        "/docs/**",
+        "/docs/**"
     };
 
     private final UserDetailsService userDetailsService;

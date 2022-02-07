@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 public class WorkstationService {
 
     private static final String IPV4_PATTERN = "^(?:[0-9]{1,3}\\.){3}[0-9]{1,3}$";
+    private static final String HTTP_IP_OPEN_IPV4 = "http://%s:%d/open";
+    private static final String HTTP_IP_OPEN_IPV6 = "http://[%s]:%d/open";
+
 
     private final KeyService keyService;
 
@@ -63,5 +66,13 @@ public class WorkstationService {
         }
 
         return ip;
+    }
+
+    public String buildUriOpen(String ip, Integer port) {
+        var isIpv4 = ip.matches(IPV4_PATTERN);
+        if (isIpv4) {
+            return HTTP_IP_OPEN_IPV4.formatted(ip, port);
+        }
+        return HTTP_IP_OPEN_IPV6.formatted(ip, port);
     }
 }

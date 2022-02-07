@@ -27,7 +27,7 @@ class CarStateReprovedTest {
         var illegalStateException =
             assertThrows(IllegalStateException.class, () -> state.executeProcess(car));
 
-        assertEquals("Não é possível avançar o estado quando o estado é %s".formatted(CarStateName.REPROVED), illegalStateException.getMessage());
+        assertEquals("Não é possível processar o estado, pois ele é final", illegalStateException.getMessage());
     }
 
     @Test
@@ -40,5 +40,14 @@ class CarStateReprovedTest {
     @DisplayName("Deve retornar o valor WAITING_DOCUMENT para o nome do estado anterior")
     void shouldReturnWAITING_DOCUMENT() {
         assertEquals(CarStateName.WAITING_DOCUMENT, new CarStateReproved().previsionAllowsState());
+    }
+
+    @Test
+    @DisplayName("Deve lançar IllegalStateException quando tentar processar o próximo estado")
+    void shouldThrowsIllegalStateExceptionWhenExecuteProcess() {
+        var carStateReproved = new CarStateReproved();
+        var exception  = assertThrows(IllegalStateException.class,
+            () -> carStateReproved.executeProcess(new CarEntity()));
+        assertEquals("Não é possível processar o estado, pois ele é final", exception.getMessage());
     }
 }

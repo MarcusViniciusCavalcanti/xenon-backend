@@ -54,6 +54,9 @@ public class CarEntity {
     @Column(name = "state")
     private String state;
 
+    @Column(name = "reason_block")
+    private String reasonBlock;
+
     @Enumerated(EnumType.STRING)
     private CarStatus carStatus;
 

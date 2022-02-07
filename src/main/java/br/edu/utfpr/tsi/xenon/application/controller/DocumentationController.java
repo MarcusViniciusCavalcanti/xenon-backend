@@ -21,6 +21,21 @@ public class DocumentationController {
         var resourceAsStream =
             this.getClass().getResourceAsStream("/public/redoc-static.html");
 
+        assert resourceAsStream != null;
+        return new BufferedReader(
+            new InputStreamReader(resourceAsStream, StandardCharsets.UTF_8))
+            .lines()
+            .collect(Collectors.joining("\n"));
+    }
+
+    @GetMapping(value = "/docs/contract", produces = MediaType.ALL_VALUE)
+    @ResponseBody
+    public String contract() {
+        log.info("Recebendo requisição para documentação.");
+        var resourceAsStream =
+            this.getClass().getResourceAsStream("/public/api-doc.yml");
+
+        assert resourceAsStream != null;
         return new BufferedReader(
             new InputStreamReader(resourceAsStream, StandardCharsets.UTF_8))
             .lines()

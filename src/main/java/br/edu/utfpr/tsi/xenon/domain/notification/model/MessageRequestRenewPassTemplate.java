@@ -327,7 +327,7 @@ public record MessageRequestRenewPassTemplate(String to,
                    <td style="padding-right: 0px;padding-left: 0px;"\s
                    align="center"><![endif]--><img class="center autowidth"\s
                    align="center" border="0"\s
-                   src="https://d15k2d11r6t6rl.cloudfront.net/public/users/Integrators/BeeProAgency/702225_684920/logo-white-bg%402x.png"
+                   src="https://res.cloudinary.com/xenonapp/image/upload/v1635709885/avatar/logo-white-bg_2x_gosksu.png"
                    style="text-decoration: none; -ms-interpolation-mode: bicubic;\s
                    height: auto; border: 0; width: 162px; max-width: 100%;
                    display: block;" width="162">

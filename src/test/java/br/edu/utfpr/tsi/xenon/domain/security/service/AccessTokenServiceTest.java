@@ -5,10 +5,16 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import br.edu.utfpr.tsi.xenon.application.config.property.SecurityProperty;
+import br.edu.utfpr.tsi.xenon.application.dto.InputLoginDto;
+import br.edu.utfpr.tsi.xenon.application.dto.TokenDto;
 import br.edu.utfpr.tsi.xenon.application.dto.UserDto;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
@@ -34,6 +40,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Teste - Unidade - AccessTokenCreator")
@@ -185,5 +193,38 @@ class AccessTokenServiceTest {
         //noinspection OptionalGetWithoutIsPresent
         var result = accessTokenService.getEmail(token).get();
         assertEquals(email, result);
+    }
+
+    @Test
+    @DisplayName("Deve lançar JsonProcessingException quando lançado pelo objectMapper")
+    void shouldThrowsJsonProcessingException() throws JsonProcessingException {
+        var faker = Faker.instance();
+        var accessCard = new AccessCardEntity();
+        var role = new RoleEntity();
+        var user = new UserEntity();
+
+        user.setId(1L);
+        user.setName(faker.name().fullName());
+        user.setTypeUser(TypeUser.SPEAKER.name());
+        user.setAvatar(faker.internet().avatar());
+        user.setAuthorisedAccess(TRUE);
+
+        role.setId(1L);
+        role.setName("roler_name");
+        role.setDescription("description role");
+
+        var expirationTime = LocalDateTime.now().plusMinutes(1L);
+        when(securityProperty.expirationTimeDate()).thenReturn(expirationTime);
+        when(securityProperty.getToken()).thenReturn(tokenConfiguration);
+        when(tokenConfiguration.getSecretKey()).thenReturn("secrete");
+
+        accessCard.setUsername(faker.internet().emailAddress());
+        accessCard.setRoleEntities(List.of(role));
+        accessCard.setUser(user);
+        user.setAccessCard(accessCard);
+
+        when(objectMapper.writeValueAsString(any())).thenThrow(JsonProcessingException.class);
+
+        assertThrows(JsonProcessingException.class, () -> accessTokenService.create(accessCard));
     }
 }

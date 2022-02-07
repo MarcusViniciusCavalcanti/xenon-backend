@@ -276,9 +276,11 @@ tags:
       * `/topic/workstation/{id}/recognize` para receber reconhecimentos, um objeto como exemplo abaixo será enviado:
       ```
       {
+          "recognizerId": "100",
           "confidence": 92.01182,
           "driverName: "Fulano de tal",
           "identifier": true,
+          "authorized": true,
           "modelCar": "Gol",
           "plate": "UTB-0010",
           "userAvatar": "https://avatar.com.br/user.png"
@@ -311,6 +313,22 @@ tags:
 
       Após receber o reconhecimento será vinculado a estação de trabalho, que originou o reconhecimento
       da qual notificará pelo websocket da estação de trabalho o resultado.
+  - name: StateSystem
+    x-displayName: Estado do Sistema Xenon.
+    description: |-
+      São recursos definei o estado do Sistema Xenon, quantidade de cadastros, usuários, estações de trabalho.
+      Como também quantidade de reconhecimentos.
+
+      Este recurso é interessante para construção de paineis de dasbhoar por exemplos.
+      Todas as solicitações são cacheadas, com tempo médio de 5 minutos de vida útil.
+
+      Os recursos propostos são:
+      * WorkstationsSummary;
+      * UsersSummary;
+      * RecognizerWeekSummary;
+      * UserTypeSummary.
+
+      Verifique os schemas para observar os atributos.
 
 paths:
     # security
@@ -827,7 +845,7 @@ paths:
           * ordenada do primeiro para o ultimo (sorteDirection) [DESC]
 
           Regras da solicitação:
-          * Usuário deve estar autenticado no sistema;
+          * Usuário deve estar autenticado no sistema
           * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
 
         parameters:
@@ -909,7 +927,7 @@ paths:
           ### Solicitação para receber um recurso usuário.
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
 
           Com base no id informado no path da requisição, um recurso usuário será retornado.
@@ -955,7 +973,7 @@ paths:
           ### Solicitação para criar um recurso usuário.
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de __administrador__ [ROLE_ADMIN]
 
           Criará um recurso usuário que representa uma abstração de uma pessoa que utiliza o sistema
@@ -1001,7 +1019,7 @@ paths:
           ### Solicitação para atualizar um recurso usuário.
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           O administrador poderá atualizar quase todos os dados do usuário, apenas a lista dos carros
@@ -1054,7 +1072,7 @@ paths:
           ### Solicitação para desativar conta do usuário
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Uma conta desativa implica que o usuário perdera o acesso ao sistema, não só como também, será
@@ -1119,7 +1137,7 @@ paths:
           ### Solicitação para remover autorização do usuário
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Uma usuário sem autorização de acesso implica que o usuário terá seu acesso ao estacionamento
@@ -1171,7 +1189,7 @@ paths:
           ### Solicitação para autorizar acesso do usuário
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Adiciona autorização de acesso para o usuário.
@@ -1222,7 +1240,7 @@ paths:
           ### Solicitação para download do documento do carro
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Retornar uma uri para baixar o arquivo que o usuário fez o upload do documento do carro
@@ -1252,7 +1270,46 @@ paths:
             $ref: '#/components/responses/NotFound'
           '500':
             $ref: '#/components/responses/InternalServerError'
-    /users/car/{id}/document/approved:
+    /users/{id}/cars:
+      get:
+        summary: Lista de carros do usuário.
+        tags:
+          - User
+        operationId: getCars
+        description: |-
+          ### Solicitação de carro do usuário
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema
+          * Ser autorizada com papel de administrador. [ROLE_ADMIN]
+
+          Retorna uma lista de 0 até 5 elementos de carros cadastrados do usuário.
+        parameters:
+          - in: header
+            name: Authorization
+            schema:
+              type: string
+              example: |-
+                Authorization: Bearer <token>
+            description: Token de acesso do usuário.
+          - in: path
+            name: id
+            schema:
+              type: integer
+              format: int64
+              example: 1
+        responses:
+          '200':
+            $ref: '#/components/responses/CarResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /users/car/{id}/approved:
       patch:
         summary: Aprova documento do carro.
         tags:
@@ -1262,7 +1319,7 @@ paths:
           ### Solicitação aprovar o documento do carro
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Endpoint para notificar que a documentação do carro disponibilizada pelo usuário está em conformidade.
@@ -1291,7 +1348,7 @@ paths:
             $ref: '#/components/responses/NotFound'
           '500':
             $ref: '#/components/responses/InternalServerError'
-    /users/car/{id}/document/reproved:
+    /users/car/{id}/reproved:
       patch:
         summary: Reprova o documento do carro disponíbilizado pelo usuário
         tags:
@@ -1301,7 +1358,7 @@ paths:
           ### Solicitação reprovar o documento do carro
 
           Regras para solicitação:
-          * Ser com usuário autenticado
+          * Usuário deve estar autenticado no sistema
           * Ser autorizada com papel de administrador. [ROLE_ADMIN]
 
           Endpoint para notificar que a documentação do carro disponibilizada pelo usuário foi reprovada.
@@ -1313,6 +1370,13 @@ paths:
               example: |-
                 Authorization: Bearer <token>
             description: Token de acesso do usuário.
+          - in: header
+            name: Accept-Language
+            schema:
+              type: string
+              example: |-
+                Accept-Language: pt-BR
+            description: Idioma da resposta para mensagens de texto.
           - in: path
             name: id
             schema:
@@ -1330,13 +1394,106 @@ paths:
             $ref: '#/components/responses/NotFound'
           '500':
             $ref: '#/components/responses/InternalServerError'
+    /users/car/{id}/access:
+      get:
+        summary: Retorna uma página de acessos de um usuário
+        operationId: getAllAccess
+        tags:
+          - User
+        description: |-
+          ### Solicitação para recuperar uma página de acessos de um usuário.
 
-#    /user/car/{id}/block-access:
-#
-#    /user/car/{id}/unlock-access:
-#
+          A Api retornar uma página com a seguinte orientação:
+          Será ordenado pelo acesso mais ao mais velho, ordernação descendente.
 
+          Os paramentros para consulta será:
+          * quantidade de elementos (size) 5
+          * página (page) 0, indicando que será a primeira página
 
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __operador__ [ROLE_OPERATOR]
+
+          Retornara um página de acessos do usuário.
+        parameters:
+          - in: path
+            name: id
+            description: identificador o usuário que deseja recupera os acessos.
+            schema:
+              type: integer
+              format: int64
+          - in: query
+            name: size
+            description: |-
+              Quantidade de elementos exibidos por página, padrão 5 valor máximo 100, será retornado erro 400
+            schema:
+              maximum: 100
+              default: 5
+              type: integer
+          - in: query
+            name: page
+            description: número da página, lista inicia por 0, ou seja 0 retornara a primeira página
+            schema:
+              type: integer
+              default: 0
+        responses:
+          '200':
+            $ref: '#/components/responses/UserAccessCarResponse'
+          '400':
+            $ref: '#/components/responses/BadRequest'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+            #    /user/car/{id}/block-access:
+    /users/cars/waiting-decision:
+      get:
+        summary: Retorna uma página carros aguardando decisão de aprovar ou não
+        operationId: getAllCarsWaitingDecision
+        tags:
+          - User
+        description: |-
+          ### Solicitação para recuperar uma página cadastros de carros aguardando decisão.
+
+          A Api retornar uma página com a seguinte orientação:
+          Será ordenado pelo cadastros mais velho, ordernação descendente.
+
+          Os paramentros para consulta será:
+          * quantidade de elementos (size) 5
+          * página (page) 0, indicando que será a primeira página
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+        parameters:
+          - in: query
+            name: size
+            description: |-
+              Quantidade de elementos exibidos por página, padrão 5 valor máximo 100, será retornado erro 400
+            schema:
+              maximum: 100
+              default: 5
+              type: integer
+          - in: query
+            name: page
+            description: número da página, lista inicia por 0, ou seja 0 retornara a primeira página
+            schema:
+              type: integer
+              default: 0
+        responses:
+          '200':
+            $ref: '#/components/responses/PageCarWaitingDecisionResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
 
     # workstation
     /workstations:
@@ -1346,7 +1503,7 @@ paths:
           ### Solicitação para recuperar todas as estações de trabalho registradas.
 
           Regras para solicitação:
-          * Ser um usuário autenticado;
+          * Usuário deve estar autenticado no sistema;
           * Ser autorizado com papel de __operador__ [ROLE_OPERATOR]
 
           Retornara todas as estações de trabalho cadastrada no Xenon.
@@ -1376,7 +1533,7 @@ paths:
           ### Solicitação para criar uma estação de trabalho.
 
           Regras para solicitação:
-          * Ser um usuário autenticado;
+          * Usuário deve estar autenticado no sistema;
           * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
 
           Retornara a estações de trabalho criada Xenon.
@@ -1421,7 +1578,7 @@ paths:
           ### Solicitação para atualizar uma estação de trabalho.
 
           Regras para solicitação:
-          * Ser um usuário autenticado;
+          * Usuário deve estar autenticado no sistema;
           * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
 
           Retornara a estações de trabalho atualizada Xenon.
@@ -1473,7 +1630,7 @@ paths:
           ### Solicitação para remover uma estação de trabalho.
 
           Regras para solicitação:
-          * Ser um usuário autenticado;
+          * Usuário deve estar autenticado no sistema;
           * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
 
           Esta solicitação não retorna corpo, esta solicitação removera uma estação de trabalho, porém
@@ -1509,9 +1666,83 @@ paths:
             $ref: '#/components/responses/UnprocessableEntity'
           '500':
             $ref: '#/components/responses/InternalServerError'
+    /workstations/{id}:
+      get:
+        summary: Retornar uma Estação de trabalho especifica.
+        operationId: getById
+        tags:
+          - Workstation
+        description: |-
+          ### Solicitação para recuperar uma estações de trabalho especifica.
 
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __operador__ [ROLE_OPERATOR]
 
-    #recogizer
+          Retornara uma estações de trabalho cadastrada no Xenon, que é igual ao Id noficicado na requisição.
+        parameters:
+          - in: path
+            name: id
+            description: identificador único da estação de trabalho.
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '200':
+            $ref: '#/components/responses/WorkstationGetterResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /workstations/{workstationId}/approved-access/recognizer/{recognizerId}:
+      post:
+        summary: Envia aprovação para acesso.
+        operationId: approvedAccess
+        tags:
+          - Workstation
+        description: |-
+          ### Solicitação aprovar o acesso ao estacionamento.
+
+          Caso a estação de trabalho esteja configurada para receber o sinal de abertura de cancela
+          uma requisição será enviada para a estação de trabalho.
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __operador__ [ROLE_OPERATOR]
+
+          Retornara uma estações de trabalho cadastrada no Xenon, que é igual ao Id noficicado na requisição.
+        parameters:
+          - in: path
+            name: workstationId
+            description: identificador único da estação de trabalho.
+            schema:
+              type: integer
+              format: int64
+          - in: path
+            name: recognizerId
+            description: identificador único do reconhecimento.
+            schema:
+              type: integer
+              format: int64
+        responses:
+          '204':
+            description: Envio de aprovação foi enviada com sucesso.
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '404':
+            $ref: '#/components/responses/NotFound'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+
+          #recogizer
+
+    #Recognizers
     /receive-recognizer:
       post:
         summary: Envia um novo reconhecimento.
@@ -1570,7 +1801,7 @@ paths:
           * ordenada do primeiro para o ultimo (sorteDirection) [DESC]
 
           Regras da solicitação:
-          * Usuário deve estar autenticado no sistema;
+          * Usuário deve estar autenticado no sistema
           * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
         parameters:
           - in: header
@@ -1627,12 +1858,11 @@ paths:
             description: |-
               Filtro para define se a resposta tera todos ou só com error
 
-              Por padrão o valor deste filtro é false (retornara todos os reconhecimentos)
+              Por padrão o valor deste filtro é indefinido (retornara todos os reconhecimentos)
               `true` retornara apenas os reconhecimentos com error
               `false` retornara todos os reconhecimentos.
             schema:
               type: boolean
-              default: false
         responses:
           '200':
             $ref: '#/components/responses/RecognizerPageResponse'
@@ -1656,7 +1886,7 @@ paths:
            Uma objeto de representação o erro gerado quando um processo de reconhecimentos fo gerado,
 
            Regras da solicitação:
-           * Usuário deve estar autenticado no sistema;
+           * Usuário deve estar autenticado no sistema
            * Usuário deve ter o papel de __administrador__ [ROLE_ADMIN]
         parameters:
           - in: header
@@ -1685,6 +1915,103 @@ paths:
           '500':
             $ref: '#/components/responses/InternalServerError'
 
+
+    #System
+    /system/workstations-and-recognizer:
+      get:
+        summary: Retornar o sumário de estações de trabalho e a quantidade de reconhecimentos.
+        operationId: workstationAndRecognizer
+        tags:
+          - StateSystem
+        description: |-
+          ### Solicitação para recuperar o sumário das estações de trabalho.
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara um sumário das estações de trabalho.
+        responses:
+          '200':
+            $ref: '#/components/responses/WorkstationSummaryResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /system/registry-cars:
+      get:
+        summary: Retorna o sumário de carros cadastros no sistema separado por estados.
+        operationId: registryCars
+        tags:
+          - StateSystem
+        description: |-
+          ### Solicitação para recuperar o sumário dos carros cadastrados separado por estado.
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara um sumário dos carros.
+        responses:
+          '200':
+            $ref: '#/components/responses/UserCarsSummaryResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /system/recognizers-week:
+      get:
+        summary: Retorna o sumário dos reconhecimentos de uma semana.
+        operationId: recognizserWeek
+        tags:
+          - StateSystem
+        description: |-
+          ### Solicitação para recuperar o sumário dos reconhecimentos retroativo de uma semana.
+
+          Exemplo, se no dia da consulta foi segunda-feira, o retorno será da segunda-feira da semana
+          anterior, até a data do dia da consulta.
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara um sumário dos reconhecimentos.
+        responses:
+          '200':
+            $ref: '#/components/responses/RecognizerSummaryResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
+    /system/registry-users:
+      get:
+        summary: Retornar o sumário da quantiade de usuários cadastrados divido por tipos.
+        operationId: registryUser
+        tags:
+          - StateSystem
+        description: |-
+          ### Solicitação para recuperar o sumário dos cadastro de usuários.
+
+          Regras para solicitação:
+          * Usuário deve estar autenticado no sistema;
+          * Ser autorizado com papel de __administrador__ [ROLE_ADMIN]
+
+          Retornara um sumário dos usuários cadastrados por tipos.
+        responses:
+          '200':
+            $ref: '#/components/responses/UserRegistrySummaryResponse'
+          '401':
+            $ref: '#/components/responses/Unauthorized'
+          '403':
+            $ref: '#/components/responses/Forbidden'
+          '500':
+            $ref: '#/components/responses/InternalServerError'
 
 
 components:
@@ -1802,10 +2129,6 @@ components:
           description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
           type: string
           pattern: "[aA-zZ]{3}[0-9][0-9aA-zZ][0-9]{2}"
-        document:
-          type: string
-          example: "https://document-uri.com.br"
-          description: Uri do documento do carro
         lastAcess:
           type: string
           format: date-time
@@ -1815,6 +2138,18 @@ components:
           type: integer
           example: 100
           description: Quantidade de acessos autorizado do carro
+        authorisedAccess:
+          type: boolean
+          description: Define se o carro tem ou acesso ao estacionamento.
+        status:
+          type: string
+          description: Define o status do cadastro do carro.
+        reasonLock:
+          type: string
+          description: Define o motivo do bloqueio ou recusa do cadastro do carro.
+        document:
+          type: string
+          description: Identificador do documento do carro que o usuário enviou.
     PageBase:
       properties:
         size:
@@ -1925,12 +2260,6 @@ components:
           type: boolean
           description: Caso um erro de processo foi gerado
           example: false
-        errorDetails:
-          type: integer
-          format: int64
-          description: |-
-            Caso um erro de processamento foi ocasionado no momento do reconhecimento, este campo será preenchido
-            indicando o id do error. Para consulta posterior.
         accessGranted:
           type: boolean
           description: |-
@@ -1962,10 +2291,142 @@ components:
         ttl:
           type: integer
           example: 3600
+    UserCarAccess:
+      type: object
+      properties:
+        carPlate:
+          type: string
+          description: Placa do carro
+          example: ABC-0001
+        epochTime:
+          type: string
+          format: date-time
+          description: Data e hora do acesso
+          example: "2021-01-30T08:30:00Z"
+        confidence:
+          type: number
+          format: float
+          description: confiabilidade no reconhecimento.
+          example: 89.9
+        grandAccess:
+          type: boolean
+          description: Define se o acesso foi ou não concebido.
+          example: false
+    PageUserCarAccess:
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - properties:
+            amountCars:
+              type: integer
+              description: quantidade de carros cadastrados
+              example: 5
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/UserCarAccess'
+    WorkstationSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          description: Identificador único da estação de trabalho
+          example: 1
+        workstationName:
+          type: string
+          description: Nome da Estação de Trabalho
+          example: Portão 01
+        amountAccess:
+          type: integer
+          description: Quantidade de reconhecimentos
+    UserCarsSummary:
+      type: object
+      properties:
+        waiting:
+          type: integer
+          format: int64
+          description: Quantidade de carros aguardando aprovação.
+          example: 12
+        approved:
+          type: integer
+          format: int64
+          description: Quantidade de carros aprovados
+          example: 20
+        reproved:
+          type: integer
+          format: int64
+          description: Quantidade de carros reprovados.
+          example: 40
+        block:
+          type: integer
+          format: int64
+          description: Quantidade de carros bloqueados.
+          example: 50
+    RecognizerSummary:
+      type: object
+      properties:
+        seventhDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do sétimo dia anterior.
+          example: 10
+        sixthDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do sexto dia anterior.
+          example: 10
+        fifthDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do quinto dia anterior.
+          example: 10
+        fourthDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do quanrto dia anterior.
+          example: 10
+        thirdhDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do terceiro dia anterior.
+          example: 10
+        secondDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do segundo dia anterior.
+          example: 10
+        firstDayBefore:
+          type: integer
+          description: quantidade de reconhecimentos do último dia anterior.
+          example: 10
+        now:
+          type: integer
+          description: quantidade de reconhecimentos hoje.
+          example: 10
+    UsersRegistrySummary:
+      type: object
+      properties:
+        services:
+          type: integer
+          format: int64
+          description: Quantidade de usuários do tipo servidor.
+          example: 1203
+        speakers:
+          type: integer
+          format: int64
+          description: Quantidade de usuários do tipo palestrante.
+          example: 50
+        students:
+          type: integer
+          format: int64
+          description: Quantidade de usuários do tipo estudante.
+          example: 61000
+    PageCarWaitingDecision:
+      allOf:
+        - $ref: '#/components/schemas/PageBase'
+        - properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/Car'
 
 
 
-    #Inputs
+        #Inputs
     InputLogin:
       type: object
       required:
@@ -2015,18 +2476,21 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
         password:
           description: Senha da credencial do usuário
           type: string
           nullable: false
           minimum: 5
           maximum: 8
+          x-constraints: "@NotBlank"
         confirmPassword:
           description: Mesma senha informada no campo senha, para confirmação.
           type: string
           minimum: 5
           maximum: 8
           nullable: false
+          x-constraints: "@NotBlank"
         modelCar:
           description: Modelo do carro, este campo é opcional.
           type: string
@@ -2034,6 +2498,7 @@ components:
           minimum: 3
           example: Gol 1.0
           nullable: false
+          x-constraints: "@NotBlank"
         plateCar:
           description: Placa do carro, este campo é opcional, Sistema já suporta placa com formato mercosul.
           type: string
@@ -2053,6 +2518,7 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
     InputNewCar:
       type: object
       required:
@@ -2061,6 +2527,8 @@ components:
       properties:
         model:
           type: string
+          nullable: false
+          x-constraints: "@NotBlank"
           description: Modelo do carro
           example: Gol 1.0
         plate:
@@ -2085,6 +2553,7 @@ components:
           minLength: 8
           maxLength: 16
           nullable: false
+          x-constraints: "@NotBlank"
         password:
           type: string
           description: Nova senha
@@ -2092,6 +2561,7 @@ components:
           minimum: 8
           maximum: 16
           nullable: false
+          x-constraints: "@NotBlank"
         confirmPassword:
           type: string
           description: Confirmação da senha.
@@ -2099,6 +2569,7 @@ components:
           minLength: 8
           maxLength: 16
           nullable: false
+          x-constraints: "@NotBlank"
     InputRemoveCar:
       type: object
       required:
@@ -2131,9 +2602,10 @@ components:
           description: nome do usuário
           example: Fulano de Tal
           type: string
-          minimum: 10
-          maximum: 255
+          minLength: 5
+          maxLength: 255
           nullable: false
+          x-constraints: "@NotBlank"
         typeUser:
           type: string
           example: SERVICE
@@ -2164,21 +2636,6 @@ components:
           type: boolean
           description: define o acesso do usuário ao estacionamento
           example: true
-        modelCar:
-          type: string
-          description: Modelo do carro
-          example: Gol 1.0
-          minLength: 5
-          maxLength: 255
-          nullable: true
-        plateCar:
-          type: string
-          description: placa do carro, placas no formato mercosu são aceitas
-          pattern: "^[a-zA-Z]{3}-?[0-9][a-zA-Z][0-9]{2}$|^[a-zA-Z]{3}-?[0-9]{4}$"
-          example: ABC-1A34
-          minLength: 7
-          maxLength: 8
-          nullable: true
     InputUpdateUser:
       required:
         - email
@@ -2201,6 +2658,7 @@ components:
           minimum: 10
           maximum: 255
           nullable: false
+          x-constraints: "@NotBlank"
         typeUser:
           type: string
           example: SERVICE
@@ -2253,6 +2711,7 @@ components:
           nullable: false
           minLength: 5
           maxLength: 255
+          x-constraints: "@NotBlank"
     InputWorkstation:
       type: object
       required:
@@ -2263,7 +2722,7 @@ components:
       properties:
         ip:
           type: string
-          pattern: ((^\s*((([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))\s*$)|(^\s*((([0-9A-Fa-f]{1,4}:){7}([0-9A-Fa-f]{1,4}|:))|(([0-9A-Fa-f]{1,4}:){6}(:[0-9A-Fa-f]{1,4}|((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){5}(((:[0-9A-Fa-f]{1,4}){1,2})|:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3})|:))|(([0-9A-Fa-f]{1,4}:){4}(((:[0-9A-Fa-f]{1,4}){1,3})|((:[0-9A-Fa-f]{1,4})?:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){3}(((:[0-9A-Fa-f]{1,4}){1,4})|((:[0-9A-Fa-f]{1,4}){0,2}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){2}(((:[0-9A-Fa-f]{1,4}){1,5})|((:[0-9A-Fa-f]{1,4}){0,3}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(([0-9A-Fa-f]{1,4}:){1}(((:[0-9A-Fa-f]{1,4}){1,6})|((:[0-9A-Fa-f]{1,4}){0,4}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:))|(:(((:[0-9A-Fa-f]{1,4}){1,7})|((:[0-9A-Fa-f]{1,4}){0,5}:((25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)(\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)){3}))|:)))(%.+)?\s*$))
+          pattern: ([0-9A-Fa-f]{1,4}:){7}[0-9A-Fa-f]{1,4}|(\d{1,3}\.){3}\d{1,3}
           description: ip que será vinculado ao dispositivo, IPV6 está disponível.
           example: 192.168.1.1
           nullable: false
@@ -2280,6 +2739,7 @@ components:
           minimum: 5
           example: Portão 01
           nullable: false
+          x-constraints: "@NotBlank"
         mode:
           type: string
           enum:
@@ -2297,8 +2757,6 @@ components:
           description: Resultados do reconhecimento.
           items:
             $ref: '#/components/schemas/Plates'
-
-
 
     # erros
     ErrorBase:
@@ -2339,6 +2797,22 @@ components:
     ErrorRecognizer:
       type: object
       properties:
+        input:
+          type: string
+          description: |-
+            Dados do reconhecimento que foi enviado, o dado informado será uma representação do JSON
+            recebido na requisição, por exemplo:
+            ````
+              {
+                "recognizers": [
+                  {
+                     "plate": "ABC-1234",
+                      "confidence": 89.01812
+                  }
+                ]
+              }
+            ````
+          example: "{}"
         errorMessage:
           type: string
           description: Message da causa do error.
@@ -2460,6 +2934,13 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/User'
+    UserAccessCarResponse:
+      description: Página dos acessos do usuário
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PageUserCarAccess'
+
     WorkstationsAllResponse:
       description: Lista de todas estações de trabalho
       content:
@@ -2480,6 +2961,12 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Workstation'
+    WorkstationGetterResponse:
+      description: Estação de trabalho da solicitação
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Workstation'
     RecognizerPageResponse:
       description: Retorno de uma página com recursos recognizer
       content:
@@ -2492,12 +2979,51 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorRecognizer'
+    CarResponse:
+      description: Retorna uma lista de 0 à 5 carros.
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/Car'
     DocumentUriResponse:
       description: Retorna um uri para baixar o documento com tempo de vida util.
       content:
         application/json:
           schema:
             $ref: '#/components/schemas/DocumentUri'
+    WorkstationSummaryResponse:
+      description: Retorna o sumario das estações de trabalho.
+      content:
+        application/json:
+          schema:
+            items:
+              $ref: '#/components/schemas/WorkstationSummary'
+    RecognizerSummaryResponse:
+      description: Retonrar um sumário do reconhecimento semanal retroativo.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RecognizerSummary'
+    UserCarsSummaryResponse:
+      description: Retornar um sumário de carros cadastrados no sistema e seus estados.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UserCarsSummary'
+    UserRegistrySummaryResponse:
+      description: Retornar um sumário de usuários cadastrados separados por tipos.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/UsersRegistrySummary'
+    PageCarWaitingDecisionResponse:
+      description: Retorna uma página de carros
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PageCarWaitingDecision'
+
 
     # errors
     BadRequest:

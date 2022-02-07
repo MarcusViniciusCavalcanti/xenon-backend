@@ -2,6 +2,7 @@ package br.edu.utfpr.tsi.xenon.domain.recognize.service;
 
 import br.edu.utfpr.tsi.xenon.application.dto.InputRecognizerDto;
 import br.edu.utfpr.tsi.xenon.application.dto.PlatesDto;
+import br.edu.utfpr.tsi.xenon.application.service.WorkstationApplicationService;
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SendingMessageService;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
@@ -9,6 +10,7 @@ import br.edu.utfpr.tsi.xenon.structure.exception.ErrorRecognizeConfidenceIsLow;
 import br.edu.utfpr.tsi.xenon.structure.exception.ErrorRecognizeOriginIpNotAllowed;
 import br.edu.utfpr.tsi.xenon.structure.exception.ErrorRecognizeWorkstationNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.repository.CarRepository;
+import br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.WorkstationRepository;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -26,9 +28,11 @@ public class ExecutorRecognizerService {
 
     private final WorkstationRepository workstationRepository;
     private final WorkstationService workstationService;
+    private final WorkstationApplicationService workstationApplicationService;
     private final CarRepository carRepository;
     private final SendingMessageService sendingMessageService;
     private final ErrorRecognizeService errorRecognizeService;
+    private final RecognizerRepository recognizerRepository;
 
     @Transactional
     public void accept(InputRecognizerDto input, String key, String ip) {
@@ -46,8 +50,12 @@ public class ExecutorRecognizerService {
             log.debug(
                 "Iniciando executor com {} resultados encontrados de carros cadastrados",
                 recognizerMajorConfidences.size());
-            new ExecutorResult(carRepository, sendingMessageService)
-                .processResult(recognizerMajorConfidences, workstation.getId());
+            var executorResult = new ExecutorResult(
+                carRepository,
+                sendingMessageService,
+                recognizerRepository,
+                workstationApplicationService);
+            executorResult.processResult(recognizerMajorConfidences, workstation);
         } catch (Exception exception) {
             log.error(
                 "Error ao processar reconhecimento [{}] verifique os logs para mais detalhes",
@@ -67,12 +75,21 @@ public class ExecutorRecognizerService {
         return workstation;
     }
 
-    private void checkOrigin(String ip, WorkstationEntity workstationEntity,
+    private void checkOrigin(
+        String ip,
+        WorkstationEntity workstationEntity,
         InputRecognizerDto input) {
-        log.debug("Verificando origem do ip");
+        var ipWorkstation = workstationEntity.getIp();
         var normalizeIp = workstationService.formatterIp(ip);
 
-        if (!normalizeIp.equalsIgnoreCase(workstationEntity.getIp())) {
+        log.info("Verificando origem do ip");
+        log.info(
+            "Avaliando ip da requisição {} com o ip da estação {}",
+            normalizeIp,
+            ipWorkstation
+        );
+
+        if (!normalizeIp.equalsIgnoreCase(ipWorkstation)) {
             throw new ErrorRecognizeOriginIpNotAllowed(
                 normalizeIp,
                 workstationEntity.getName(),

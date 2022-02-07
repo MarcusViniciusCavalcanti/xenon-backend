@@ -73,5 +73,24 @@ public class WorkstationEndpoint implements WorkstationApi {
         return ResponseEntity.ok(workstations);
     }
 
+    @Override
+    @IsOperatorOrAdmin
+    @GetMapping("/{id}")
+    public ResponseEntity<WorkstationDto> getById(@PathVariable("id") Long id) {
+        log.info("Recebendo requisição para recupera uma estações de trabalho");
+        var workstation = workstationApplicationService.getWorkstationById(id);
+        return ResponseEntity.ok(workstation);
+    }
+
+    @Override
+    @IsOperatorOrAdmin
+    @PostMapping("/{workstationId}/approved-access/recognizer/{recognizerId}")
+    public ResponseEntity<Void> approvedAccess(
+        @PathVariable Long workstationId,
+        @PathVariable Long recognizerId) {
+        log.info("Recebendo requisição para autorizar a entrada na estações de trabalho");
+        workstationApplicationService.approvedAccess(workstationId, recognizerId);
+        return ResponseEntity.noContent().build();
+    }
 }
 

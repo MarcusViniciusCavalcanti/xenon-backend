@@ -15,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.EnumSource.Mode;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 @DisplayName("Teste - Unidade - CarStateWaitingDocument")
 class CarStateWaitingDocumentTest {
@@ -69,6 +71,24 @@ class CarStateWaitingDocumentTest {
             BLOCK.name(),
             WAITING_DOCUMENT.name()
         );
+        assertEquals(msg, exception.getMessage());
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " "})
+    @NullSource
+    @DisplayName("Deve lançar IllegalStateException quando o carro estiver com documento em branco")
+    void shouldThrowsIllegalStateExceptionWhenDocumentIsBlank(String document) {
+        var car = new CarEntity();
+        car.setAuthorisedAccess(TRUE);
+        car.setState(BLOCK.name());
+        car.setDocument(document);
+
+        var state = new CarStateWaitingDocument();
+        var exception =
+            assertThrows(IllegalStateException.class, () -> state.executeProcess(car));
+        var msg = "Carro sem documento, não pode ser submetido para avaliação ou ser aprovado";
+
         assertEquals(msg, exception.getMessage());
     }
 

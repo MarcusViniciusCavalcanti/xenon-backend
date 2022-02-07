@@ -85,10 +85,13 @@ public interface UserFactory {
                 .id(car.getId())
                 .plateCar(car.getPlate())
                 .modelCar(car.getModel())
-                .document(car.getDocument())
                 .lastAcess(car.getLastAccess())
-                .numberAccess(car.getNumberAccess()))
-            .forEach(user::addCarsItem);
+                .numberAccess(car.getNumberAccess())
+                .reasonLock(car.getReasonBlock())
+                .status(car.getCarStatus().name())
+                .authorisedAccess(car.getAuthorisedAccess())
+                .document(car.getDocument())
+            ).forEach(user::addCarsItem);
 
         return user;
     }

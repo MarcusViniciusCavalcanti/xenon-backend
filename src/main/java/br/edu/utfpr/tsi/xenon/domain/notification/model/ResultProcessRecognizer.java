@@ -6,6 +6,7 @@ import lombok.Getter;
 @Builder
 @Getter
 public final class ResultProcessRecognizer {
+    private final Long recognizerId;
     private final String driverName;
     private final Boolean identifier;
     private final Boolean authorize;

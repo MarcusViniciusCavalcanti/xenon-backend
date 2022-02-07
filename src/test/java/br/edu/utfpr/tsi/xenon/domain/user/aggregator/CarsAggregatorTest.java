@@ -217,9 +217,35 @@ class CarsAggregatorTest {
 
         assertNotNull(car.getDocument());
 
+        verify(changeStateCar).executeProcess(car);
         verify(filesProperty).getDocUrl();
         verify(uploader).upload(eq(document), any());
     }
+
+    @Test
+    @DisplayName("Deve enviar arquivo com sucesso mas, não alterar o estado do carro")
+    void shouldHaveReUpSendDocument() throws IOException {
+        var uploader = mock(Uploader.class);
+        var publicId = "publicId";
+
+        var car = new CarEntity();
+        car.setDocument("document");
+        var document = Files.createTempFile("test", ".pdf").toFile();
+
+        when(validatorFile.validateDocumentFile(document)).thenReturn(TRUE);
+        when(filesProperty.getDocUrl()).thenReturn("document");
+        when(cloudinary.uploader()).thenReturn(uploader);
+        when(uploader.upload(eq(document), any())).thenReturn(Map.of("public_id", publicId));
+
+        carsAggregator.includeDocumentToCar(car, document);
+
+        assertNotNull(car.getDocument());
+
+        verify(changeStateCar, never()).executeProcess(car);
+        verify(filesProperty).getDocUrl();
+        verify(uploader).upload(eq(document), any());
+    }
+
 
     private static Stream<Arguments> providerArgsToInvalidPlateOrModel() {
         return Stream.of(

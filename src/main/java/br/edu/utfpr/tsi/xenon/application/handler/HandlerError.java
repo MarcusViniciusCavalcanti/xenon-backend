@@ -122,7 +122,8 @@ public class HandlerError implements EndpointsTranslator {
                 var msg = StringUtils.EMPTY;
 
                 if (StringUtils.equalsIgnoreCase(error.getCode(), "pattern")) {
-                    msg = checkCase(error, request.getLocale());
+                    var locale = getLocale(request.getHeader(ACCEPT_LANGUAGE));
+                    msg = checkCase(error, locale);
                 } else {
                     msg = StringUtils.defaultString(error.getDefaultMessage(), StringUtils.EMPTY);
                 }
@@ -139,7 +140,7 @@ public class HandlerError implements EndpointsTranslator {
     public ResponseEntity<ErrorBaseDto> entityNotFound(
         ResourceNotFoundException exception,
         HttpServletRequest request) {
-        log.error("e-mail já existe: {}", exception.getMessage());
+        log.error("Falha na busca: {}", exception.getMessage());
         var path = request.getServletPath();
         var locale = getLocale(request.getHeader(ACCEPT_LANGUAGE));
         var message = getMessage(
@@ -215,7 +216,7 @@ public class HandlerError implements EndpointsTranslator {
     public ResponseEntity<ErrorBaseDto> emailExistException(
         EmailErrorException exception,
         HttpServletRequest request) {
-        log.error("e-mail já existe: {}", exception.getMessage());
+        log.error("Falha no e-mail: {}", exception.getMessage());
         var email = exception.getEmail();
         var path = request.getServletPath();
         var locale = getLocale(request.getHeader(ACCEPT_LANGUAGE));
@@ -223,9 +224,9 @@ public class HandlerError implements EndpointsTranslator {
         var error = new ErrorDto()
             .message(message)
             .path(path)
-            .statusCode(HttpStatus.CONFLICT.value());
+            .statusCode(exception.getHttpStatusCode());
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
+        return ResponseEntity.status(HttpStatus.valueOf(exception.getHttpStatusCode())).body(error);
     }
 
     @ExceptionHandler(RegistryUserException.class)
@@ -332,7 +333,7 @@ public class HandlerError implements EndpointsTranslator {
             && !email.endsWith("@alunos.utfpr.edu.br")) {
             return getMessage(EMAIL_NOT_INSTITUTIONAL.getCode(), locale, email);
         } else {
-            return getMessage(EMAIL_INVALID.getCode(), locale, email);
+            return getMessage(EMAIL_INVALID.getCode(), locale);
         }
     }
 }

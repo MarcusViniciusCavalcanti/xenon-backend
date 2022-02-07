@@ -43,7 +43,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando usuário não encontrado")
     void shouldReturnError() {
-        var locale = Locale.forLanguageTag("en-US");
+        var locale = Locale.US;
         var message = messageSource.getMessage("ERROR-011", null, locale);
         var input = new InputLoginDto()
             .password("abc123")
@@ -52,7 +52,7 @@ class SecurityEndpointTest extends AbstractContextTest {
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", locale.getLanguage())
+            .header("Accept-Language", locale.toLanguageTag())
             .contentType(JSON)
             .body(input, JACKSON_2)
             .expect()
@@ -66,7 +66,7 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando corpo da requisição está vázio")
     void shouldReturnErrorBadRequest() {
-        var locale = Locale.forLanguageTag("en-US");
+        var locale = Locale.US;
         var message = messageSource.getMessage("ERROR-011", null, locale);
         var input = new InputLoginDto()
             .password("")
@@ -75,7 +75,7 @@ class SecurityEndpointTest extends AbstractContextTest {
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", locale.getLanguage())
+            .header("Accept-Language", locale.toLanguageTag())
             .contentType(JSON)
             .body(input, JACKSON_2)
             .expect()
@@ -89,13 +89,13 @@ class SecurityEndpointTest extends AbstractContextTest {
     @Test
     @DisplayName("Deve retornar erro quando corpo da requisição está vázio")
     void shouldReturnErrorBadRequestInputNull() {
-        var locale = Locale.forLanguageTag("en-US");
+        var locale = Locale.US;
         var message = messageSource.getMessage("ERROR-001", null, locale);
 
         given()
             .port(port)
             .accept(APPLICATION_JSON_VALUE)
-            .header("Accept-Language", locale.getLanguage())
+            .header("Accept-Language", locale.toLanguageTag())
             .contentType(JSON)
             .body("{}")
             .expect()

@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 
 @Execution(ExecutionMode.SAME_THREAD)
+@DisplayName("Teste - Unidade - GetterAllUserSpec")
 @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.UserRepository")
 class GetterAllUserSpecTest extends AbstractContextTest {
 

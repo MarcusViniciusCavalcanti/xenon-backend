@@ -101,8 +101,6 @@ class UserCreatorServiceTest {
             .email(faker.internet().emailAddress())
             .name(faker.name().fullName())
             .typeUser(TypeUserEnum.STUDENTS)
-            .modelCar(faker.rockBand().name())
-            .plateCar(faker.bothify("???-#?##", TRUE))
             .addRolesItem(1L)
             .enabled(TRUE)
             .authorisedAccess(TRUE);
@@ -118,10 +116,6 @@ class UserCreatorServiceTest {
                 eq(input.getEmail()),
                 eq("pass"),
                 eq("pass"));
-        lenient()
-            .doNothing()
-            .when(carsAggregator)
-            .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
         doNothing()
             .when(rolesAggregator)
             .includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
@@ -136,8 +130,7 @@ class UserCreatorServiceTest {
             eq(input.getEmail()),
             eq("pass"),
             eq("pass"));
-        verify(carsAggregator)
-            .includeNewCar(any(UserEntity.class), eq(input.getModelCar()), eq(input.getPlateCar()));
+
         verify(rolesAggregator).includeRoles(any(), eq(STUDENTS), eq(List.of(1L)));
     }
 

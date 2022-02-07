@@ -57,7 +57,6 @@ public class UserCreatorService {
         accessCardAggregator.includeAccessCard(entity, input.getEmail(), pass, pass);
         rolesAggregator.includeRoles(entity.getAccessCard(), type, input.getRoles());
         avatarAggregator.includeDefaultAvatarUrl(entity);
-        carsAggregator.includeNewCar(entity, input.getModelCar(), input.getPlateCar());
 
         return entity;
     }
