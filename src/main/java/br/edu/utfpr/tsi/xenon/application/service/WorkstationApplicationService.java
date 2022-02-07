@@ -16,6 +16,7 @@ import br.edu.utfpr.tsi.xenon.domain.notification.model.UpdateWorkstationMessage
 import br.edu.utfpr.tsi.xenon.domain.notification.service.SendingMessageService;
 import br.edu.utfpr.tsi.xenon.domain.workstations.entity.WorkstationEntity;
 import br.edu.utfpr.tsi.xenon.domain.workstations.service.WorkstationService;
+import br.edu.utfpr.tsi.xenon.structure.MessagesMapper;
 import br.edu.utfpr.tsi.xenon.structure.exception.ResourceNotFoundException;
 import br.edu.utfpr.tsi.xenon.structure.exception.WorkStationException;
 import br.edu.utfpr.tsi.xenon.structure.repository.RecognizerRepository;
@@ -64,16 +65,9 @@ public class WorkstationApplicationService {
     public WorkstationDto update(InputWorkstationDto input, Long id) {
         log.info("Iniciando processo de atualização de workstation de id: {}", id);
         log.info("Iniciando processo de atualização de workstation de id: {}, input:{}", id, input);
-
         var workstation = getById(id);
         var formatterIp = workstationService.formatterIp(input.getIp());
-        if (FALSE.equals(workstation.getName().equals(input.getName()))) {
-            checkName(input.getName());
-        }
-
-        if (FALSE.equals(workstation.getIp().equals(formatterIp))) {
-            checkIp(formatterIp);
-        }
+        checkIpAndName(input, workstation, formatterIp);
 
         var workstationUpdated = workstationService.replaceData(
             workstation,
@@ -83,19 +77,13 @@ public class WorkstationApplicationService {
             input.getPort());
 
         workstationRepository.saveAndFlush(workstationUpdated);
-
         var workstationDto = buildDto(workstationUpdated);
-
-        log.debug("montando ActionChangeWorkstation");
         var actionChangeUpdate = ActionChangeWorkstation.builder()
             .type(ActionType.UPDATE)
             .workstation(workstationDto)
             .build();
 
-        senderMessageWebSocketService.sendBeforeTransactionCommit(
-            new UpdateWorkstationMessage(actionChangeUpdate),
-            CHANGE_WORKSTATION.topicTo(workstationDto.getId().toString()));
-
+        sendMessage(new UpdateWorkstationMessage(actionChangeUpdate), workstationDto.getId());
         return workstationDto;
     }
 
@@ -112,10 +100,8 @@ public class WorkstationApplicationService {
         var messageRequest = new UpdateWorkstationMessage(actionChangeDelete);
         log.debug("marcando envio de message com o tipo: {}, pos transação",
             messageRequest.actionChangeWorkstation());
-        senderMessageWebSocketService.sendBeforeTransactionCommit(
-            messageRequest,
-            CHANGE_WORKSTATION.topicTo(id.toString()));
 
+        sendMessage(messageRequest, id);
         workstationRepository.delete(workstation);
     }
 
@@ -195,16 +181,42 @@ public class WorkstationApplicationService {
     private void checkName(String name) {
         log.info("Verificando se nome existe.");
         var isExistName = workstationRepository.existsByName(name);
-        if (TRUE.equals(isExistName)) {
-            throw new WorkStationException(NAME_WORKSTATION_EXIST.getCode(), name);
-        }
+        checkAndThrowsException(isExistName, NAME_WORKSTATION_EXIST, name);
     }
 
     private void checkIp(String ip) {
         log.info("Verificando se ip existe.");
         var isExistIp = workstationRepository.existsByIp(ip);
-        if (TRUE.equals(isExistIp)) {
-            throw new WorkStationException(IP_WORKSTATION_EXIST.getCode(), ip);
+        checkAndThrowsException(isExistIp, IP_WORKSTATION_EXIST, ip);
+    }
+
+    private void checkAndThrowsException(
+        Boolean isExistName,
+        MessagesMapper nameWorkstationExist,
+        String name
+    ) {
+        if (TRUE.equals(isExistName)) {
+            throw new WorkStationException(nameWorkstationExist.getCode(), name);
+        }
+    }
+
+    private void sendMessage(UpdateWorkstationMessage actionChangeUpdate, Long workstationDto) {
+        senderMessageWebSocketService.sendBeforeTransactionCommit(
+            actionChangeUpdate,
+            CHANGE_WORKSTATION.topicTo(workstationDto.toString()));
+    }
+
+    private void checkIpAndName(
+        InputWorkstationDto input,
+        WorkstationEntity workstation,
+        String formatterIp
+    ) {
+        if (FALSE.equals(workstation.getName().equals(input.getName()))) {
+            checkName(input.getName());
+        }
+
+        if (FALSE.equals(workstation.getIp().equals(formatterIp))) {
+            checkIp(formatterIp);
         }
     }
 }

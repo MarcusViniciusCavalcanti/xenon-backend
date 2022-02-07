@@ -24,6 +24,7 @@ import java.util.Base64;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -77,31 +78,38 @@ public class RenewPasswordService {
             log.debug("Validando toke da chave: {}", decodeParams.key());
             if (TRUE.equals(TokenApplication.newInstance()
                 .validateToken(decodeParams.token(), expectedToken))) {
-
                 log.debug("recuperando access card.");
                 var email = getEmail(decodeParams);
                 accessCardRepository.findByUsername(email)
-                    .ifPresentOrElse(accessCardEntity -> {
-                        log.info("Criando nova senha.");
-                        var crytorService = CreatorPasswordService
-                            .newInstance(cryptPasswordEncoder);
-                        var pass = crytorService.createPass();
-
-                        log.debug("Senha encryptado com {}", crytorService.cryptPasswordEncoder());
-                        log.info("enviando email.");
-                        var template = new MessageRenewPassTemplate(pass.pass(), email);
-                        senderEmailService.sendEmail(template);
-                        accessCardEntity.setPassword(pass.encoderPass());
-
-                        log.info("Salvando nova senha.");
-                        tokenRedisRepository.delete(decodeParams.key);
-                        accessCardRepository.saveAndFlush(accessCardEntity);
-                    }, () -> log.debug("access card não foi encontrado."));
+                    .ifPresentOrElse(
+                        createPass(decodeParams, email),
+                        () -> log.debug("access card não foi encontrado.")
+                    );
             } else {
                 log.info("Token não encontrado ou está invalido.");
             }
         }).handleAsync((result, throwable) ->
             catchError(result, throwable, "Erro na confirmação de pedido de senha {}"));
+    }
+
+    private Consumer<AccessCardEntity> createPass(KeyToken decodeParams,
+        String email) {
+        return accessCardEntity -> {
+            log.info("Criando nova senha.");
+            var crytorService = CreatorPasswordService
+                .newInstance(cryptPasswordEncoder);
+            var pass = crytorService.createPass();
+
+            log.debug("Senha encryptado com {}", crytorService.cryptPasswordEncoder());
+            log.info("enviando email.");
+            var template = new MessageRenewPassTemplate(pass.pass(), email);
+            senderEmailService.sendEmail(template);
+            accessCardEntity.setPassword(pass.encoderPass());
+
+            log.info("Salvando nova senha.");
+            tokenRedisRepository.delete(decodeParams.key);
+            accessCardRepository.saveAndFlush(accessCardEntity);
+        };
     }
 
     public ProcessResultDto changePassword(AccessCardEntity accessCardEntity,
