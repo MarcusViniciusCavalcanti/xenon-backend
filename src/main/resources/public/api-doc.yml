@@ -217,6 +217,20 @@ tags:
 
       Cada papel do usuário, lhe concede certas autorizações para manipular os recursos do sistema. Observe cada
       uri do recursos para observar qual papel é necessário para manipular o recurso, na sessão regras da solicitação.
+      
+      ### Tópicos
+      Api dispõe um tópico para notificar o cliente que cadastros de novos carros está aguardando
+      avaliação para aprovar ou reprovar, o protocolo utilizado protocolo __websock/stomp__, 
+      
+      `/api/ws` endpoint do websocket, para se conectar este endpoint e necessário autenticação, ou seja
+      enviar também o header `Authorization`.
+      
+      Uma mensagem de texto será enviada para o sequinte path:
+
+      * `/topic/application/new-registry-car` para receber atualiações, de cadastro de novos carros,
+      
+      As notificações ocorreram em intervalos de cinco (5) minutos.
+
   - name: Workstation
     x-displayName: Estações de trabalho
     description: |-

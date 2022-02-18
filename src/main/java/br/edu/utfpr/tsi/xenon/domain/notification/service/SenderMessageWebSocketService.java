@@ -34,6 +34,10 @@ public class SenderMessageWebSocketService implements SendingMessageService {
 
     @TransactionalEventListener(phase = TransactionPhase.BEFORE_COMMIT)
     public void handleSendEvent(MessageSendRequest<MessageWebSocket<?>> sendRequest) {
+        sendRequest(sendRequest);
+    }
+
+    public void sendRequest(MessageSendRequest<MessageWebSocket<?>> sendRequest) {
         log.info("Enviando mensagem para o tópico {}", sendRequest.getTopic());
         log.debug("Com payload {}", sendRequest.getValue().message());
         var url = String.format("/topic%s", sendRequest.getTopic());

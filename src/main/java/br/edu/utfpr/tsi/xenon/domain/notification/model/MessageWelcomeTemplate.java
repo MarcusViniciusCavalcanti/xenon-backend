@@ -294,7 +294,7 @@ public record MessageWelcomeTemplate(
             padding-left: 15px;" align="center"><![endif]-->
             <div style="font-size:1px;line-height:40px">&nbsp;</div>
             <img class="center fixedwidth" align="center" border="0"
-            src="https://d15k2d11r6t6rl.cloudfront.net/public/users/Integrators/BeeProAgency/702225_684920/logo-white-bg%402x.png"
+            src="https://res.cloudinary.com/xenonapp/image/upload/v1635709885/avatar/logo-white-bg_2x_gosksu.png"
             alt="I'm an image" title="I'm an image"
             style="text-decoration: none; -ms-interpolation-mode: bicubic;
             height: auto; border: 0; width: 325px; max-width: 100%;

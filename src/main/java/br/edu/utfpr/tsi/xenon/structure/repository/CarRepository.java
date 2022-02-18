@@ -33,4 +33,6 @@ public interface CarRepository extends JpaRepository<CarEntity, Long> {
     CarStateSummary getCarsSummary();
 
     Page<CarEntity> findAllByState(String state, Pageable pageable);
+
+    Boolean existsAllByState(String stats);
 }
