@@ -97,6 +97,40 @@ class RegistryStudentsEndpointTest extends AbstractContextTest {
     }
 
     @Test
+    @DisplayName("Deve criar usuário com sucesso sem carro")
+    @ResourceLocks(value = {
+        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.UserRepository"),
+        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository"),
+        @ResourceLock(value = "br.edu.utfpr.tsi.xenon.structure.repository.CarRepository"),
+    })
+    void shouldHaveRegisterUserSuccessfullyWhithoutCar() {
+        var pass = faker.internet().password();
+        var input = new InputRegistryStudentDto()
+            .email(faker.bothify("registry-success-#####@alunos.utfpr.edu.br"))
+            .name(faker.name().fullName())
+            .password(pass)
+            .confirmPassword(pass);
+
+        given()
+            .port(port)
+            .accept(APPLICATION_JSON_VALUE)
+            .header("Accept-Language", Locale.forLanguageTag("en-US"))
+            .contentType(JSON)
+            .body(input, JACKSON_2)
+            .expect()
+            .body("id", notNullValue())
+            .body("email", is(input.getEmail()))
+            .body("type", is(TypeUser.STUDENTS.name()))
+            .body("avatar", containsString("/defaultUser.png"))
+            .body("roles[0].id", is(1))
+            .body("roles[0].name", is("ROLE_DRIVER"))
+            .body("roles[0].description", is("Perfil Motorista"))
+            .when()
+            .post(URL_REGISTRY);
+
+    }
+
+    @Test
     @DisplayName("Deve retornar error de validações de campos")
     void shouldReturnErrorBadRequest() {
         var locale = Locale.US;

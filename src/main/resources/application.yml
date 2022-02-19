@@ -105,4 +105,12 @@ spring:
 springdoc:
   api-docs:
     enabled: false
+logging:
+  charset:
+    console: utf-8
+  level:
+    root: ERROR
+    org.springframework.web: ERROR
+    br.edu.utfpr.tsi.xenon: INFO
+    org.hibernate: ERROR
 

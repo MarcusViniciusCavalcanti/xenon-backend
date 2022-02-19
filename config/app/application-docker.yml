@@ -1,3 +1,8 @@
+spring:
+  jpa:
+    show-sql: false
+    generate-ddl: false
+
 xenon:
   configurations:
     datasource:
@@ -7,9 +12,9 @@ xenon:
       password: xenon
     file:
       avatarUrl: avatar
-      docUrl:
+      docUrl: docs
     redis:
-      host: redis
+      host: 127.0.0.1
       port: 6379
     email:
       host: smtp.mailtrap.io
@@ -26,9 +31,5 @@ xenon:
         expiration: 3600
         secret: qxBEEQv7E8aviX1KUcdOiF5ve5COUPAr
     application:
-      domain: http://localhost:8080/api
-
-spring:
-  jpa:
-    show-sql: true
-    generate-ddl: true
+      domain: http://localhost:80
+      allowedWebsocket: http://localhost:80

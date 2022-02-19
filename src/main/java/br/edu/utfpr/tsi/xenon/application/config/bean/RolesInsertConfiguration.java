@@ -1,7 +1,12 @@
 package br.edu.utfpr.tsi.xenon.application.config.bean;
 
+import br.edu.utfpr.tsi.xenon.domain.security.entity.AccessCardEntity;
 import br.edu.utfpr.tsi.xenon.domain.security.entity.RoleEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.entity.UserEntity;
+import br.edu.utfpr.tsi.xenon.domain.user.factory.TypeUser;
+import br.edu.utfpr.tsi.xenon.structure.repository.AccessCardRepository;
 import br.edu.utfpr.tsi.xenon.structure.repository.RoleRepository;
+import br.edu.utfpr.tsi.xenon.structure.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.ApplicationArguments;
@@ -13,6 +18,8 @@ import org.springframework.stereotype.Component;
 public class RolesInsertConfiguration implements ApplicationRunner {
 
     private final RoleRepository repository;
+    private final UserRepository userRepository;
+    private final AccessCardRepository accessCardRepository;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -31,6 +38,29 @@ public class RolesInsertConfiguration implements ApplicationRunner {
         roleOperator.setDescription("Perfil Operdor");
         roleOperator.setName("ROLE_OPERATOR");
 
-        repository.saveAll(List.of(roleDrive, roleAdmin, roleOperator));
+        var roles = List.of(roleDrive, roleAdmin, roleOperator);
+        repository.saveAll(roles);
+
+        var hasCreateUser = accessCardRepository.existsByUsername("user_admin@admin.com");
+
+        if (Boolean.FALSE.equals(hasCreateUser)) {
+            var user = new UserEntity();
+            user.setTypeUser(TypeUser.SERVICE.name());
+            user.setName("Venicius Cavalcanti");
+            user.setAuthorisedAccess(Boolean.TRUE);
+
+            var accessCard = new AccessCardEntity();
+            accessCard.setRoleEntities(roles);
+            accessCard.setUser(user);
+            accessCard.setUsername("user_admin@admin.com");
+            accessCard.setPassword("$2a$10$wkCHAIGphKy/rrIaomiGAu.Vm.hGMWTWjSjoTxUITMqxP.EfVCRee");
+            accessCard.setEnabled(Boolean.TRUE);
+            accessCard.setAccountNonExpired(Boolean.TRUE);
+            accessCard.setAccountNonLocked(Boolean.TRUE);
+            accessCard.setCredentialsNonExpired(Boolean.TRUE);
+
+            user.setAccessCard(accessCard);
+            userRepository.save(user);
+        }
     }
 }

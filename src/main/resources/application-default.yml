@@ -31,5 +31,5 @@ xenon:
 
 spring:
   jpa:
-    show-sql: true
-    generate-ddl: true
+    show-sql: false
+    generate-ddl: false
